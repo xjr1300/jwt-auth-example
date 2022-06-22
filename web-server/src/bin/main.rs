@@ -24,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
     );
     init_subscriber(subscriber);
 
-    tracing::info!("startup server...");
+    tracing::info!("Startup server...");
     HttpServer::new(move || App::new().route("/", web::get().to(hello)))
         .bind("127.0.0.1:8000")?
         .run()
