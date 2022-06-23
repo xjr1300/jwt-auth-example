@@ -140,6 +140,21 @@ impl HashedPassword {
         Ok(Self { value })
     }
 
+    /// ハッシュ化した文字列からハッシュ化パスワードインスタンスを構築する。
+    ///
+    /// # Arguments
+    ///
+    /// * `hashed_password`: パスワードインスタンス。
+    ///
+    /// # Returns
+    ///
+    /// ハッシュ化パスワードインスタンス。
+    pub fn gen_unchecked(hashed_password: &str) -> Self {
+        Self {
+            value: Secret::new(hashed_password.to_owned()),
+        }
+    }
+
     /// パスワードをハッシュ化したPHC文字列を返却する。
     ///
     /// # Returns

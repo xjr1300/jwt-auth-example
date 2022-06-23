@@ -2,7 +2,8 @@
     "cSpell.words": [
         "appender",
         "dotenvy",
-        "Hasher"
+        "Hasher",
+        "sqlx"
     ],
     "cSpell.ignorePaths": [
         "package-lock.json",

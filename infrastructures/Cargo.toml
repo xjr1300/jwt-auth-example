@@ -1,0 +1,14 @@
+[package]
+name = "infrastructures"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+domains = { path = "../domains" }
+secrecy = "0.8.0"
+
+[dependencies.sqlx]
+version = "0.6"
+default-features = false
+features = ["runtime-tokio-rustls", "macros", "postgres", "uuid", "time"]

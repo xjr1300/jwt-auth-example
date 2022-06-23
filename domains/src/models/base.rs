@@ -27,6 +27,15 @@ impl<T> EntityId<T> {
             _marker: PhantomData,
         }
     }
+
+    /// IDをUUIDで返却する。
+    ///
+    /// # Returns
+    ///
+    /// ID。
+    pub fn value(&self) -> &Uuid {
+        &self.value
+    }
 }
 
 impl<T> TryFrom<&str> for EntityId<T> {
