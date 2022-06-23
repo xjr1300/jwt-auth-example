@@ -179,6 +179,8 @@ pub struct User {
     email_address: EmailAddress,
     /// ハッシュ化パスワード。
     hashed_password: HashedPassword,
+    /// アクティブフラグ。
+    is_active: bool,
     /// 最終ログイン日時。
     last_logged_in: Option<OffsetDateTime>,
     /// 作成日時。
@@ -196,14 +198,17 @@ impl User {
     /// * `user_name` - ユーザー名。
     /// * `email_address` - Eメイルアドレス。
     /// * `hashed_password` - ハッシュ化パスワード。
+    /// * `is_active` - アクティブフラグ。
     /// * `last_logged_in` - 最終ログイン日時。
     /// * `created_at` - 作成日時。
     /// * `updated_at` - 更新日時。
+    #[allow(clippy::too_many_arguments)]
     pub fn gen(
         id: UserId,
         user_name: UserName,
         email_address: EmailAddress,
         hashed_password: HashedPassword,
+        is_active: bool,
         last_logged_in: Option<OffsetDateTime>,
         created_at: Option<OffsetDateTime>,
         updated_at: Option<OffsetDateTime>,
@@ -213,6 +218,7 @@ impl User {
             user_name,
             email_address,
             hashed_password,
+            is_active,
             last_logged_in,
             created_at,
             updated_at,
@@ -253,6 +259,15 @@ impl User {
     /// ハッシュ化パスワードインスタンス。
     pub fn hashed_password(&self) -> &HashedPassword {
         &self.hashed_password
+    }
+
+    /// アクティブフラグを返却する。
+    ///
+    /// # Returns
+    ///
+    /// アクティブフラグ。
+    pub fn is_active(&self) -> bool {
+        self.is_active
     }
 
     /// 最終ログイン日時を返却する。
