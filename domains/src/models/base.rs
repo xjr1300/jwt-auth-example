@@ -12,7 +12,19 @@ pub struct EntityId<T> {
 }
 
 impl<T> EntityId<T> {
-    /// エンティティ構造体を構築する。
+    /// エンティティIDインスタンスを構築する。
+    ///
+    /// # Returns
+    ///
+    /// エンティティIDインスタンス。
+    pub fn default() -> Self {
+        Self {
+            value: Uuid::new_v4(),
+            _marker: PhantomData,
+        }
+    }
+
+    /// エンティティIDインスタンスを構築する。
     ///
     /// # Arguments
     ///
