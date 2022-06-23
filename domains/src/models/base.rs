@@ -20,7 +20,7 @@ impl<T> EntityId<T> {
     /// # Returns
     ///
     /// エンティティIDインスタンス。
-    pub(crate) fn gen(value: Uuid) -> Self {
+    pub fn gen(value: Uuid) -> Self {
         Self {
             value,
             _marker: PhantomData,
@@ -64,5 +64,30 @@ mod tests {
         let str = "this-is-invalid-uuid";
         let id = EntityId::<i32>::try_from(str);
         assert!(id.is_err());
+    }
+
+    #[test]
+    fn test_gen_email_address() {
+        let values = vec![
+            "email@example.com",
+            "firstname.lastname@example.com",
+            "email@subdomain.example.com",
+            "firstname+lastname@example.com",
+            "email@123.123.123.123",
+            "email@[123.123.123.123]",
+            r#"email"@example.com"#,
+            "1234567890@example.com",
+            "email@example-one.com",
+            "_______@example.com",
+            "email@example.name",
+            "email@example.museum",
+            "email@example.co.jp",
+            "firstname-lastname@example.com",
+        ];
+        for value in values {
+            let email = EmailAddress::gen(value);
+            assert!(email.is_ok(), "{}", value);
+            assert_eq!(email.unwrap().value(), value, "{}", value);
+        }
     }
 }
