@@ -1,6 +1,11 @@
 use anyhow::anyhow;
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
+use time::OffsetDateTime;
 use validator::Validate;
+
+use hashed_password::hashed_password;
+
+use crate::models::base::{EmailAddress, EntityId};
 
 /// ユーザー名の長さ
 const USER_NAME_MIN_LEN: usize = 2;
@@ -108,6 +113,37 @@ impl RawPassword {
     /// # Returns
     ///
     /// * パスワード。
+    pub fn value(&self) -> &Secret<String> {
+        &self.value
+    }
+}
+
+/// ハッシュ化パスワード構造体
+pub struct HashedPassword {
+    value: Secret<String>,
+}
+
+impl HashedPassword {
+    /// ハッシュ化パスワードインスタンスを構築する。
+    ///
+    /// # Arguments
+    ///
+    /// * `password`: パスワードインスタンス。
+    ///
+    /// # Returns
+    ///
+    /// ハッシュ化パスワードインスタンス。
+    pub fn gen(password: &RawPassword) -> anyhow::Result<Self> {
+        let value = hashed_password(password.value())?;
+
+        Ok(Self { value })
+    }
+
+    /// パスワードをハッシュ化したPHC文字列を返却する。
+    ///
+    /// # Returns
+    ///
+    /// パスワードをハッシュ化したPHC文字列。
     pub fn value(&self) -> &Secret<String> {
         &self.value
     }

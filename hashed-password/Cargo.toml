@@ -1,0 +1,10 @@
+[package]
+name = "hashed-password"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+argon2 = { version = "0.4", features = ["std"] }
+secrecy = "0.8.0"
+rand = { version = "0.8.5", features = ["std_rng"] }
