@@ -28,7 +28,7 @@ impl UserName {
     /// # Returns
     ///
     /// ユーザー名インスタンス。
-    pub fn gen(value: &str) -> anyhow::Result<Self> {
+    pub fn new(value: &str) -> anyhow::Result<Self> {
         let user_name = Self {
             value: value.to_owned(),
         };
@@ -76,7 +76,7 @@ impl RawPassword {
     /// # Returns
     ///
     /// パスワード。
-    pub fn gen(value: &str) -> anyhow::Result<Self> {
+    pub fn new(value: &str) -> anyhow::Result<Self> {
         if value.len() < RAW_PASSWORD_MIN_LEN {
             return Err(anyhow!(format!(
                 "パスワードは{}文字以上の文字列で指定してください。",
@@ -134,7 +134,7 @@ impl HashedPassword {
     /// # Returns
     ///
     /// ハッシュ化パスワードインスタンス。
-    pub fn gen(password: &RawPassword) -> anyhow::Result<Self> {
+    pub fn new(password: &RawPassword) -> anyhow::Result<Self> {
         let value = hashed_password(password.value())?;
 
         Ok(Self { value })
@@ -203,7 +203,7 @@ impl User {
     /// * `created_at` - 作成日時。
     /// * `updated_at` - 更新日時。
     #[allow(clippy::too_many_arguments)]
-    pub fn gen(
+    pub fn new(
         id: UserId,
         user_name: UserName,
         email_address: EmailAddress,
@@ -307,7 +307,7 @@ mod tests {
     fn test_user_name_gen() {
         let values = vec!["x".repeat(USER_NAME_MIN_LEN), "x".repeat(USER_NAME_MAX_LEN)];
         for value in values {
-            let user_name = UserName::gen(&value);
+            let user_name = UserName::new(&value);
             assert!(user_name.is_ok(), "{}", value);
             assert_eq!(user_name.unwrap().value(), value, "{}", value);
         }
@@ -320,7 +320,7 @@ mod tests {
             "x".repeat(USER_NAME_MAX_LEN + 1),
         ];
         for value in values {
-            let user_name = UserName::gen(&value);
+            let user_name = UserName::new(&value);
             assert!(user_name.is_err(), "{}", value);
         }
     }
@@ -329,7 +329,7 @@ mod tests {
     #[test]
     fn test_raw_password_gen() {
         let valid_password = "01abCD#$";
-        let result = RawPassword::gen(valid_password);
+        let result = RawPassword::new(valid_password);
         assert!(result.is_ok());
         assert_eq!(result.unwrap().value().expose_secret(), valid_password);
     }
@@ -338,22 +338,22 @@ mod tests {
     #[test]
     fn test_raw_password_new_invalid() {
         // 7文字
-        assert!(RawPassword::gen("01abCD#").is_err(), "パスワードの文字数");
+        assert!(RawPassword::new("01abCD#").is_err(), "パスワードの文字数");
         // アルファベットを含んでいない
-        assert!(RawPassword::gen("012345#$").is_err(), "アルファベット");
+        assert!(RawPassword::new("012345#$").is_err(), "アルファベット");
         // 大文字のファルファベットを含んでいない
         assert!(
-            RawPassword::gen("01abcd#$").is_err(),
+            RawPassword::new("01abcd#$").is_err(),
             "大文字アルファベット"
         );
         // 小文字のファルファベットを含んでいない
         assert!(
-            RawPassword::gen("01ABCD#$").is_err(),
+            RawPassword::new("01ABCD#$").is_err(),
             "小文字アルファベット"
         );
         // 数字を含んでいない
-        assert!(RawPassword::gen("abcDEF#$").is_err(), "数字");
+        assert!(RawPassword::new("abcDEF#$").is_err(), "数字");
         // 記号を含んでいない
-        assert!(RawPassword::gen("01abCDef").is_err(), "記号");
+        assert!(RawPassword::new("01abCDef").is_err(), "記号");
     }
 }

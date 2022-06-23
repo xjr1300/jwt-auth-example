@@ -41,9 +41,9 @@ impl PgUserRepository {
             return Err(anyhow!("ユーザーは存在しません。"));
         }
         let result = result.unwrap();
-        let user = User::gen(
+        let user = User::new(
             id.clone(),
-            UserName::gen(&result.user_name)?,
+            UserName::new(&result.user_name)?,
             EmailAddress::gen(&result.email_address)?,
             HashedPassword::gen_unchecked(&result.hashed_password),
             result.is_active,

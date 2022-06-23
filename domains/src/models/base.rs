@@ -12,7 +12,7 @@ pub struct EntityId<T> {
 }
 
 impl<T> EntityId<T> {
-    /// 文字列からエンティティ構造体を構築する。
+    /// エンティティ構造体を構築する。
     ///
     /// # Arguments
     ///
@@ -21,7 +21,7 @@ impl<T> EntityId<T> {
     /// # Returns
     ///
     /// エンティティIDインスタンス。
-    pub fn gen(value: Uuid) -> Self {
+    pub fn new(value: Uuid) -> Self {
         Self {
             value,
             _marker: PhantomData,
@@ -52,7 +52,7 @@ impl<T> TryFrom<&str> for EntityId<T> {
     /// エンティティIDインスタンス。
     fn try_from(value: &str) -> anyhow::Result<Self, Self::Error> {
         Uuid::try_parse(value)
-            .map(|value| Ok(Self::gen(value)))
+            .map(|value| Ok(Self::new(value)))
             .map_err(|err| anyhow!("{:?}", err))?
     }
 }
