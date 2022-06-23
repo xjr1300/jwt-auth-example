@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::Secret;
 use time::OffsetDateTime;
 use validator::Validate;
 
@@ -119,6 +119,7 @@ impl RawPassword {
 }
 
 /// ハッシュ化パスワード構造体
+#[derive(Debug, Clone)]
 pub struct HashedPassword {
     value: Secret<String>,
 }
@@ -149,11 +150,128 @@ impl HashedPassword {
     }
 }
 
+/// ユーザーID
+pub type UserId = EntityId<User>;
+
+/// ユーザー
+#[derive(Debug, Clone, Validate)]
+pub struct User {
+    /// ユーザーID。
+    id: UserId,
+    /// ユーザー名。
+    user_name: UserName,
+    /// Eメールアドレス。
+    email_address: EmailAddress,
+    /// ハッシュ化パスワード。
+    hashed_password: HashedPassword,
+    /// 最終ログイン日時。
+    last_logged_in: Option<OffsetDateTime>,
+    /// 作成日時。
+    created_at: Option<OffsetDateTime>,
+    /// 更新日時。
+    updated_at: Option<OffsetDateTime>,
+}
+
+impl User {
+    /// ユーザーインスタンスを構築する。
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ユーザーID。
+    /// * `user_name` - ユーザー名。
+    /// * `email_address` - Eメイルアドレス。
+    /// * `hashed_password` - ハッシュ化パスワード。
+    /// * `last_logged_in` - 最終ログイン日時。
+    /// * `created_at` - 作成日時。
+    /// * `updated_at` - 更新日時。
+    pub fn gen(
+        id: UserId,
+        user_name: UserName,
+        email_address: EmailAddress,
+        hashed_password: HashedPassword,
+        last_logged_in: Option<OffsetDateTime>,
+        created_at: Option<OffsetDateTime>,
+        updated_at: Option<OffsetDateTime>,
+    ) -> Self {
+        Self {
+            id,
+            user_name,
+            email_address,
+            hashed_password,
+            last_logged_in,
+            created_at,
+            updated_at,
+        }
+    }
+
+    /// ユーザーIDを返却する。
+    ///
+    /// # Returns
+    ///
+    /// ユーザーIDインスタンス。
+    pub fn id(&self) -> &UserId {
+        &self.id
+    }
+
+    /// ユーザー名を返却する。
+    ///
+    /// # Returns
+    ///
+    /// ユーザー名インスタンス。
+    pub fn user_name(&self) -> &UserName {
+        &self.user_name
+    }
+
+    /// Eメールアドレスを返却する。
+    ///
+    /// # Returns
+    ///
+    /// Eメールアドレスインスタンス。
+    pub fn email_address(&self) -> &EmailAddress {
+        &self.email_address
+    }
+
+    /// ハッシュ化されたパスワードを返却する。
+    ///
+    /// # Returns
+    ///
+    /// ハッシュ化パスワードインスタンス。
+    pub fn hashed_password(&self) -> &HashedPassword {
+        &self.hashed_password
+    }
+
+    /// 最終ログイン日時を返却する。
+    ///
+    /// # Returns
+    ///
+    /// 最終ログイン日時。
+    pub fn last_logged_in(&self) -> &Option<OffsetDateTime> {
+        &self.last_logged_in
+    }
+
+    /// 作成日時を返却する。
+    ///
+    /// # Returns
+    ///
+    /// 作成ログイン日時。
+    pub fn created_at(&self) -> &Option<OffsetDateTime> {
+        &self.created_at
+    }
+
+    /// 更新日時を返却する。
+    ///
+    /// # Returns
+    ///
+    /// 更新ログイン日時。
+    pub fn updated_at(&self) -> &Option<OffsetDateTime> {
+        &self.updated_at
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use secrecy::ExposeSecret;
-
     use super::*;
+    use secrecy::ExposeSecret;
 
     #[test]
     fn test_user_name_gen() {
