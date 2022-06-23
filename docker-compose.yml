@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_USER: "${POSTGRES_USER_NAME}"
       POSTGRES_PASSWORD: "${POSTGRES_USER_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DATABASE_NAME}"
     volumes:
-      - "${POSTGRES_DATA}:/var/lib/postgresql/data"
-
+      - "${POSTGRES_DATA}:${POSTGRES_CONTAINER_DATA}"
   redis:
     image: redis:latest
     ports:
