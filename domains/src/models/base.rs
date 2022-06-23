@@ -52,7 +52,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_from_uuid_str() {
+    fn test_entity_id_try_from() {
         let uuid = uuid::Uuid::new_v4();
         let value = uuid.to_string();
         let id = EntityId::<i32>::try_from(value.as_str());
@@ -60,9 +60,9 @@ mod tests {
     }
 
     #[test]
-    fn test_from_invalid_uuid_str() {
-        let str = "this-is-invalid-uuid";
-        let id = EntityId::<i32>::try_from(str);
+    fn test_entity_id_try_from_by_invalid_string() {
+        let value = "this-is-invalid-uuid";
+        let id = EntityId::<i32>::try_from(value);
         assert!(id.is_err());
     }
 
