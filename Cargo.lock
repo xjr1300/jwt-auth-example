@@ -803,6 +803,9 @@ dependencies = [
  "domains",
  "secrecy",
  "sqlx",
+ "thiserror",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]

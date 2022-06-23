@@ -1,9 +1,25 @@
-use anyhow::anyhow;
 use secrecy::ExposeSecret;
 use sqlx::{Postgres, Transaction};
+use uuid::Uuid;
 
 use domains::models::base::EmailAddress;
 use domains::models::users::{HashedPassword, User, UserId, UserName};
+
+#[derive(Debug, thiserror::Error)]
+pub enum UserRepositoryError {
+    /// データベースエラー
+    #[error("データベースがエラーを返却しました。: {0}")]
+    DatabaseError(String),
+    /// ユーザーが見つからない
+    #[error("ユーザー({0})が存在しません。")]
+    UserNotFound(Uuid),
+    /// ドメイン制約エラー
+    #[error("{0}")]
+    DomainRestrictionError(#[from] anyhow::Error),
+    /// ユーザー登録エラー
+    #[error("ユーザーを登録できませんでした。")]
+    UserCreateError,
+}
 
 pub struct PgUserRepository;
 
@@ -22,7 +38,8 @@ impl PgUserRepository {
         &self,
         id: &UserId,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<User> {
+    ) -> Result<User, UserRepositoryError> {
+        // データーベースに問い合わせ
         let result = sqlx::query!(
             r#"
             SELECT
@@ -36,20 +53,25 @@ impl PgUserRepository {
             id.value()
         )
         .fetch_optional(&mut *tx)
-        .await?;
-        if result.is_none() {
-            return Err(anyhow!("ユーザーは存在しません。"));
-        }
-        let result = result.unwrap();
+        .await
+        .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
+        // ユーザーを取得できなかった場合、エラーを返却
+        let record = result.ok_or_else(|| UserRepositoryError::UserNotFound(*id.value()))?;
+        // ユーザーを取得
+        let user_name = UserName::new(&record.user_name)
+            .map_err(UserRepositoryError::DomainRestrictionError)?;
+        let email_address = EmailAddress::new(&record.email_address)
+            .map_err(UserRepositoryError::DomainRestrictionError)?;
+        let hashed_password = HashedPassword::new_unchecked(&record.hashed_password);
         let user = User::new(
             id.clone(),
-            UserName::new(&result.user_name)?,
-            EmailAddress::gen(&result.email_address)?,
-            HashedPassword::gen_unchecked(&result.hashed_password),
-            result.is_active,
-            result.last_logged_in,
-            Some(result.created_at),
-            Some(result.updated_at),
+            user_name,
+            email_address,
+            hashed_password,
+            record.is_active,
+            record.last_logged_in,
+            Some(record.created_at),
+            Some(record.updated_at),
         );
 
         Ok(user)
@@ -69,8 +91,8 @@ impl PgUserRepository {
         &self,
         user: &User,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<User> {
-        // ユーザーを登録
+    ) -> Result<User, UserRepositoryError> {
+        // データベースを操作
         let result = sqlx::query!(
             r#"
             INSERT INTO users (
@@ -86,11 +108,13 @@ impl PgUserRepository {
             user.is_active(),
         )
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
+        // ユーザーが登録されたか確認
         if result.rows_affected() != 1 {
-            return Err(anyhow!("ユーザーを登録するときにエラーが発生しました。"));
+            return Err(UserRepositoryError::UserCreateError);
         }
-        //  作成日時と更新日時を取得するため、登録したユーザーを取得
+        // 作成日時と更新日時を取得するため、登録したユーザーを取得
         let inserted_user = self.get(user.id(), &mut *tx).await?;
 
         Ok(inserted_user)
@@ -112,8 +136,8 @@ impl PgUserRepository {
         &self,
         user: &User,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<User> {
-        // ユーザーを更新
+    ) -> Result<User, UserRepositoryError> {
+        // データベースを操作
         let result = sqlx::query!(
             r#"
             UPDATE users
@@ -129,11 +153,13 @@ impl PgUserRepository {
             user.id().value(),
         )
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
+        // ユーザーが更新されたか確認
         if result.rows_affected() != 1 {
-            return Err(anyhow!("ユーザーが存在しません。"));
+            return Err(UserRepositoryError::UserNotFound(*user.id().value()));
         }
-        //  更新日時を取得するため、登録したユーザーを取得
+        // 更新日時を取得するため、登録したユーザーを取得
         let updated_user = self.get(user.id(), &mut *tx).await?;
 
         Ok(updated_user)
@@ -148,7 +174,8 @@ impl PgUserRepository {
         &self,
         id: &UserId,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), UserRepositoryError> {
+        // データベースを操作
         let result = sqlx::query!(
             r#"
             DELETE FROM users
@@ -158,9 +185,11 @@ impl PgUserRepository {
             id.value()
         )
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
+        // ユーザーが削除されたか確認
         if result.rows_affected() != 1 {
-            return Err(anyhow!("ユーザーが存在しません。"));
+            return Err(UserRepositoryError::UserNotFound(*id.value()));
         }
 
         Ok(())
@@ -177,7 +206,8 @@ impl PgUserRepository {
         id: &UserId,
         hashed_password: HashedPassword,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), UserRepositoryError> {
+        // データベースを操作
         let result = sqlx::query!(
             r#"
             UPDATE users
@@ -191,9 +221,11 @@ impl PgUserRepository {
             id.value(),
         )
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
+        // パスワードが更新されたか確認
         if result.rows_affected() != 1 {
-            return Err(anyhow!("ユーザーが存在しません。"));
+            return Err(UserRepositoryError::UserNotFound(*id.value()));
         }
 
         Ok(())
@@ -209,7 +241,8 @@ impl PgUserRepository {
         &self,
         id: &UserId,
         tx: &mut Transaction<'_, Postgres>,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), UserRepositoryError> {
+        // データベースを操作
         let result = sqlx::query!(
             r#"
             UPDATE users
@@ -222,9 +255,11 @@ impl PgUserRepository {
             id.value(),
         )
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
+        // 最終ログイン日時が更新されたか確認
         if result.rows_affected() != 1 {
-            return Err(anyhow!("ユーザーが存在しません。"));
+            return Err(UserRepositoryError::UserNotFound(*id.value()));
         }
 
         Ok(())

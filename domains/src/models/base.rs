@@ -86,7 +86,7 @@ impl EmailAddress {
     /// # Returns
     ///
     /// Eメールアドレスインスタンス。
-    pub fn gen(value: &str) -> anyhow::Result<Self> {
+    pub fn new(value: &str) -> anyhow::Result<Self> {
         let email = Self {
             value: value.to_owned(),
         };
@@ -151,7 +151,7 @@ mod tests {
         ];
         /* cSpell: enable */
         for value in values {
-            let email = EmailAddress::gen(value);
+            let email = EmailAddress::new(value);
             assert!(email.is_ok(), "{}", value);
             assert_eq!(email.unwrap().value(), value, "{}", value);
         }
@@ -182,7 +182,7 @@ mod tests {
         ];
         /* cSpell: enable */
         for value in values {
-            let email = EmailAddress::gen(value);
+            let email = EmailAddress::new(value);
             assert!(email.is_err(), "{}", value);
         }
     }

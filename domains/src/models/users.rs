@@ -149,7 +149,7 @@ impl HashedPassword {
     /// # Returns
     ///
     /// ハッシュ化パスワードインスタンス。
-    pub fn gen_unchecked(hashed_password: &str) -> Self {
+    pub fn new_unchecked(hashed_password: &str) -> Self {
         Self {
             value: Secret::new(hashed_password.to_owned()),
         }

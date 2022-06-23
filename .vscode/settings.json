@@ -3,7 +3,8 @@
         "appender",
         "dotenvy",
         "Hasher",
-        "sqlx"
+        "sqlx",
+        "thiserror"
     ],
     "cSpell.ignorePaths": [
         "package-lock.json",
