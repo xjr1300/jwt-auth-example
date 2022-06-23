@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use anyhow::anyhow;
 use uuid::Uuid;
+use validator::Validate;
 
 /// エンティティID構造体
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -47,6 +48,44 @@ impl<T> TryFrom<&str> for EntityId<T> {
     }
 }
 
+/// Eメールアドレス構造体
+#[derive(Debug, Clone, Validate)]
+pub struct EmailAddress {
+    #[validate(email)]
+    value: String,
+}
+
+impl EmailAddress {
+    /// Eメールアドレスインスタンスを生成する。
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Eメールアドレス。
+    ///
+    /// # Returns
+    ///
+    /// Eメールアドレスインスタンス。
+    pub fn gen(value: &str) -> anyhow::Result<Self> {
+        let email = Self {
+            value: value.to_owned(),
+        };
+        if email.validate().is_err() {
+            return Err(anyhow!(format!("Eメールアドレス({})が不正です。", value)));
+        }
+
+        Ok(email)
+    }
+
+    /// Eメールアドレスを文字列で返却する。
+    ///
+    /// # Returns
+    ///
+    /// Eメールアドレス。
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -68,6 +107,8 @@ mod tests {
 
     #[test]
     fn test_gen_email_address() {
+        // https://gist.github.com/cjaoude/fd9910626629b53c4d25
+        /* cSpell: disable */
         let values = vec![
             "email@example.com",
             "firstname.lastname@example.com",
@@ -75,7 +116,7 @@ mod tests {
             "firstname+lastname@example.com",
             "email@123.123.123.123",
             "email@[123.123.123.123]",
-            r#"email"@example.com"#,
+            // r#"email"@example.com"#,
             "1234567890@example.com",
             "email@example-one.com",
             "_______@example.com",
@@ -83,11 +124,45 @@ mod tests {
             "email@example.museum",
             "email@example.co.jp",
             "firstname-lastname@example.com",
+            // r#"much.”more\ unusual”@example.com"#,
+            // r#"very.unusual.”@”.unusual.com@example.com"#,
+            // r#"very.”(),:;<>[]”.VERY.”very@\\ "very”.unusual@strange.example.com"#,
         ];
+        /* cSpell: enable */
         for value in values {
             let email = EmailAddress::gen(value);
             assert!(email.is_ok(), "{}", value);
             assert_eq!(email.unwrap().value(), value, "{}", value);
+        }
+    }
+
+    #[test]
+    fn test_email_address_gen_by_invalid_strings() {
+        /* cSpell: disable */
+        // https://gist.github.com/cjaoude/fd9910626629b53c4d25
+        let values = vec![
+            // "plainaddress",
+            // "#@%^%#$@#$@#.com",
+            "@example.com",
+            "Joe Smith <email@example.com>",
+            "email.example.com",
+            "email@example@example.com",
+            // ".email@example.com",
+            // "email.@example.com",
+            // "email..email@example.com",
+            "あいうえお@example.com",
+            "email@example.com (Joe Smith)",
+            // "email@example",
+            "email@-example.com",
+            // "email@example.web",
+            // "email@111.222.333.44444",
+            "email@example..com",
+            // "Abc..123@example.com",
+        ];
+        /* cSpell: enable */
+        for value in values {
+            let email = EmailAddress::gen(value);
+            assert!(email.is_err(), "{}", value);
         }
     }
 }
