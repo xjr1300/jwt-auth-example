@@ -3,6 +3,7 @@
         "appender",
         "dotenvy",
         "Hasher",
+        "reqwest",
         "sqlx",
         "thiserror"
     ],

@@ -13,12 +13,6 @@ use secrecy::{ExposeSecret, Secret};
 /// # Returns
 ///
 /// ソルトを付与したハッシュ化したパスワードのPHC文字列。
-///
-/// ```
-/// /* cSpell: disable */
-/// $argon2id$v=19$m=65536,t=2,p=1$gZiV/M1gPc22ElAH/Jh1Hw$CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno
-/// /* cSpell: enable */
-/// ```
 pub fn hashed_password(password: &Secret<String>) -> Result<Secret<String>, anyhow::Error> {
     let salt = SaltString::generate(&mut rand::thread_rng());
     let password_hash = Argon2::new(
