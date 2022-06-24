@@ -3,7 +3,7 @@ use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{fmt::writer::MakeWriterExt, EnvFilter};
 
-use web_server::configurations::{DatabaseSettings, ENV_VALUES};
+use web_server::configurations::{DatabaseSettings, ENV_VALUES, WebAppSettings};
 use web_server::telemetries::{get_subscriber, init_subscriber};
 
 #[tracing::instrument(name = "Hello world")]
@@ -35,12 +35,13 @@ async fn main() -> anyhow::Result<()> {
 
     // アプリケーションを起動
     tracing::info!("Startup server...");
+    let web_app_settings = WebAppSettings::default();
     HttpServer::new(move || {
         App::new()
             .app_data(pool.clone())
             .route("/", web::get().to(hello))
     })
-    .bind("127.0.0.1:8000")?
+    .bind(web_app_settings.socket_address())?
     .run()
     .await?;
 
