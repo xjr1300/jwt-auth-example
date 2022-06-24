@@ -30,7 +30,6 @@ pub struct TestWebApp {
 }
 
 /// テスト用Webアプリを生成する。
-#[allow(dead_code)]
 pub async fn spawn_web_app() -> TestWebApp {
     dotenv().ok();
 
