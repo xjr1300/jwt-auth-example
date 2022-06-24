@@ -5,8 +5,31 @@ use once_cell::sync::Lazy;
 use secrecy::{ExposeSecret, Secret};
 use sqlx::{postgres::PgConnectOptions, ConnectOptions};
 
+/// 設定構造体
+#[derive(Debug, Clone)]
+pub struct Settings {
+    /// Rust設定
+    pub rust_log: String,
+    /// Webアプリ設定
+    pub web_app: WebAppSettings,
+    /// データベース設定
+    pub db: DatabaseSettings,
+}
+
+/// 環境変数から設定を取得する。
+///
+/// # Returns
+///
+/// 設定インスタンス。
+pub fn get_settings() -> Settings {
+    Settings {
+        rust_log: ENV_VALUES.rust_log.clone(),
+        web_app: WebAppSettings::default(),
+        db: DatabaseSettings::default(),
+    }
+}
+
 /// 環境変数構造体
-#[derive(Debug)]
 pub struct EnvValues {
     /// RUST_LOG
     pub rust_log: String,
@@ -63,6 +86,7 @@ pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
 });
 
 /// Webアプリ設定構造体
+#[derive(Debug, Clone)]
 pub struct WebAppSettings {
     pub host: String,
     pub port: u16,
@@ -92,6 +116,7 @@ impl WebAppSettings {
 }
 
 /// データベース設定構造体
+#[derive(Debug, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,

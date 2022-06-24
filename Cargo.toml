@@ -1,2 +1,2 @@
 [workspace]
-members = ["web-server", "domains", "hashed-password", "infrastructures"]
+members = ["web-server", "domains", "hashed-password", "infrastructures", "routes"]

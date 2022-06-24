@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-trait = "0.1"
 hashed-password = { path = "../hashed-password" }
 secrecy = "0.8.0"
 time = { version = "0.3", features = ["serde"] }

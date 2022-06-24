@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 actix-web = "4.1"
 anyhow = "1.0"
-domains = { path = "../domains" }
 dotenvy = "0.15"
 once_cell = "1.12"
+routes = { path = "../routes" }
 secrecy = "0.8.0"
 tokio = { version = "1.19", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
