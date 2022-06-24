@@ -3,7 +3,7 @@ use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{fmt::writer::MakeWriterExt, EnvFilter};
 
-use web_server::configurations::ENV_VALUES;
+use web_server::configurations::{DatabaseSettings, ENV_VALUES};
 use web_server::telemetries::{get_subscriber, init_subscriber};
 
 #[tracing::instrument(name = "Hello world")]
@@ -29,10 +29,9 @@ async fn main() -> anyhow::Result<()> {
     init_subscriber(subscriber);
 
     // データベースに接続
+    let database_settings = DatabaseSettings::default();
     tracing::info!("Connect to database...");
-    let pool = web::Data::new(
-        PgPoolOptions::new().connect_lazy_with(ENV_VALUES.database_connect_option_with_database()),
-    );
+    let pool = web::Data::new(PgPoolOptions::new().connect_lazy_with(database_settings.with_db()));
 
     // アプリケーションを起動
     tracing::info!("Startup server...");

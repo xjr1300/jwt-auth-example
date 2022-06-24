@@ -22,35 +22,6 @@ pub struct EnvValues {
     pub postgres_database_name: String,
 }
 
-impl EnvValues {
-    /// template1データベースに接続するオプションを返却する。
-    ///
-    /// # Returns
-    ///
-    /// データベース接続オプションインスタンス。
-    pub fn database_connect_option_without_database(&self) -> PgConnectOptions {
-        PgConnectOptions::new()
-            .username(&self.postgres_user_name)
-            .password(self.postgres_user_password.expose_secret())
-            .host(&self.postgres_host)
-            .port(self.postgres_port)
-    }
-
-    /// Webアプリ用のデータベースに接続するオプションを返却する。
-    ///
-    /// # Returns
-    ///
-    /// データベース接続オプションインスタンス。
-    pub fn database_connect_option_with_database(&self) -> PgConnectOptions {
-        let mut options = self
-            .database_connect_option_without_database()
-            .database(&self.postgres_database_name);
-        options.log_statements(tracing::log::LevelFilter::Trace);
-
-        options
-    }
-}
-
 /// 環境変数
 pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
     dotenv().ok();
@@ -75,3 +46,54 @@ pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
             .expect("環境変数にPOSTGRES_DATABASE_NAMEが設定されてません。"),
     }
 });
+
+/// データベース設定構造体
+pub struct DatabaseSettings {
+    pub username: String,
+    pub password: Secret<String>,
+    pub host: String,
+    pub port: u16,
+    pub database_name: String,
+}
+
+impl DatabaseSettings {
+    /// 環境変数からデータベース設定を構築する。
+    ///
+    /// # Returns
+    ///
+    /// データベース設定。
+    pub fn default() -> Self {
+        Self {
+            username: ENV_VALUES.postgres_user_name.clone(),
+            password: ENV_VALUES.postgres_user_password.clone(),
+            host: ENV_VALUES.postgres_host.clone(),
+            port: ENV_VALUES.postgres_port,
+            database_name: ENV_VALUES.postgres_database_name.clone(),
+        }
+    }
+
+    /// template1データベースに接続するオプションを返却する。
+    ///
+    /// # Returns
+    ///
+    /// データベース接続オプションインスタンス。
+    pub fn without_db(&self) -> PgConnectOptions {
+        PgConnectOptions::new()
+            .username(&self.username)
+            .password(self.password.expose_secret())
+            .host(&self.host)
+            .port(self.port)
+    }
+
+    /// Webアプリ用のデータベースに接続するオプションを返却する。
+    ///
+    /// # Returns
+    ///
+    /// データベース接続オプションインスタンス。
+    pub fn with_db(&self) -> PgConnectOptions {
+        let mut options = self.without_db().database(&self.database_name);
+        options.log_statements(tracing::log::LevelFilter::Trace);
+
+        options
+    }
+}
