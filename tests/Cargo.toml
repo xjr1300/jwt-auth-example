@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+anyhow = "1.0"
 actix-web = "4.1"
 dotenvy = "0.15"
 web-server = { path = "../web-server" }
