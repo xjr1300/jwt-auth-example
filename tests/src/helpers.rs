@@ -9,6 +9,8 @@ use web_server::{
     telemetries::{get_subscriber, init_subscriber},
 };
 
+/// 環境変数にTEST_LOGがあった場合、トレースを標準出力に出力して、std::io::Sinkに出力する。
+/// std::io::sinkは、すべてのデータを消費するライターインスタンスを構築する関数である。
 static TRACING: Lazy<()> = Lazy::new(|| {
     let name = "test".to_string();
     let level = "info".to_string();
@@ -37,7 +39,7 @@ pub async fn spawn_web_app() -> TestWebApp {
 
     let settings = {
         let mut s = get_settings();
-        s.web_app.port = 0; // OSにポート番号を指定してもらう
+        s.web_app.port = 0; // OSにポート番号を指定してもらうようにポート0を設定
         s.db.database_name = Uuid::new_v4().to_string(); // 新しいテスト用のデータベース
 
         s
@@ -88,5 +90,6 @@ async fn configure_database(settings: &DatabaseSettings) -> PgPool {
         .run(&pool)
         .await
         .expect("Failed to migrate the test database.");
+
     pool
 }
