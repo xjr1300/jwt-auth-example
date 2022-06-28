@@ -6,9 +6,13 @@ use hashed_password::verify_password;
 use infrastructures::repositories::users::PgUserRepository;
 use telemetries::spawn_blocking_with_tracing;
 
-pub struct Tokens {
-    pub access: String,
-    pub refresh: String,
+pub struct AuthInfo {
+    /// セッションID
+    pub session_id: String,
+    /// アクセストークン
+    pub access_token: String,
+    /// リフレッシュトークン
+    pub refresh_token: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -23,7 +27,7 @@ pub async fn login(
     pool: &PgPool,
     email_address: EmailAddress,
     raw_password: Secret<String>,
-) -> anyhow::Result<Tokens, LoginError> {
+) -> anyhow::Result<AuthInfo, LoginError> {
     // Eメールアドレスからユーザーを取得
     let mut tx = pool
         .begin()
@@ -48,8 +52,9 @@ pub async fn login(
         return Err(LoginError::UnexpectedError(e.into()));
     }
 
-    Ok(Tokens {
-        access: "access".to_owned(),
-        refresh: "refresh".to_owned(),
+    Ok(AuthInfo {
+        session_id: "session_id".to_owned(),
+        access_token: "access_token".to_owned(),
+        refresh_token: "refresh_token".to_owned(),
     })
 }
