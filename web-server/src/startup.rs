@@ -79,6 +79,7 @@ async fn start_web_app(listener: TcpListener, pool: PgPool) -> Result<Server, an
         App::new()
             .app_data(pool.clone())
             .route("/health_check", web::get().to(health_check::health_check))
+            .service(web::scope("/accounts").route("/login", web::post().to(accounts::login)))
     })
     .listen(listener)?
     .run();
