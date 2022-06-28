@@ -4,8 +4,7 @@ use actix_web::{dev::Server, web, App, HttpServer};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use crate::configurations::{DatabaseSettings, Settings};
-use routes::health_check;
-
+use routes::{accounts, health_check};
 /// Webアプリ構造体
 pub struct WebApp {
     /// Webアプリがリッスンしているポート番号
@@ -79,7 +78,7 @@ async fn start_web_app(listener: TcpListener, pool: PgPool) -> Result<Server, an
     let server = HttpServer::new(move || {
         App::new()
             .app_data(pool.clone())
-            .route("/health_check", web::get().to(health_check))
+            .route("/health_check", web::get().to(health_check::health_check))
     })
     .listen(listener)?
     .run();
