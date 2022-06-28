@@ -1,10 +1,12 @@
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, web, App, HttpServer};
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use sqlx::{postgres::PgPoolOptions, PgPool};
+
+use routes::{auth, health_check};
 
 use crate::configurations::{DatabaseSettings, Settings};
-use routes::{accounts, health_check};
+
 /// Webアプリ構造体
 pub struct WebApp {
     /// Webアプリがリッスンしているポート番号
@@ -24,7 +26,7 @@ impl WebApp {
     ///
     /// Webアプリインスタンス。
     pub async fn build(settings: Settings) -> Result<Self, anyhow::Error> {
-        let pool = get_connection_pool(settings.db);
+        let pool = get_connection_pool(&settings.db);
 
         let listener = TcpListener::bind(settings.web_app.socket_address())?;
         let port = listener.local_addr().unwrap().port();
@@ -58,7 +60,7 @@ impl WebApp {
 /// # Returns
 ///
 /// データベースコネクションプールインスタンス。
-pub fn get_connection_pool(settings: DatabaseSettings) -> PgPool {
+pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
     tracing::info!("Connect to database...");
     PgPoolOptions::new().connect_lazy_with(settings.with_db())
 }
@@ -74,12 +76,14 @@ pub fn get_connection_pool(settings: DatabaseSettings) -> PgPool {
 ///
 /// Webアプリサーバーインスタンス。
 async fn start_web_app(listener: TcpListener, pool: PgPool) -> Result<Server, anyhow::Error> {
+    let pool = web::Data::new(pool);
+
     tracing::info!("Startup web app...");
     let server = HttpServer::new(move || {
         App::new()
             .app_data(pool.clone())
             .route("/health_check", web::get().to(health_check::health_check))
-            .service(web::scope("/accounts").route("/login", web::post().to(accounts::login)))
+            .service(web::scope("/auth").route("/login", web::post().to(auth::login)))
     })
     .listen(listener)?
     .run();

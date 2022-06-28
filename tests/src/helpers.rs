@@ -64,7 +64,7 @@ pub async fn spawn_web_app() -> TestWebApp {
     let web_app = TestWebApp {
         web_app_address: format!("http://localhost:{}", port),
         port,
-        pool: get_connection_pool(settings.db),
+        pool: get_connection_pool(&settings.db),
         api_client,
     };
 

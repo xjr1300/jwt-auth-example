@@ -1389,7 +1389,9 @@ dependencies = [
  "secrecy",
  "serde",
  "serde_json",
+ "sqlx",
  "tracing",
+ "usecases",
 ]
 
 [[package]]
@@ -2026,6 +2028,13 @@ dependencies = [
 [[package]]
 name = "usecases"
 version = "0.1.0"
+dependencies = [
+ "secrecy",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+]
 
 [[package]]
 name = "uuid"
