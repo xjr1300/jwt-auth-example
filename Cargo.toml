@@ -5,6 +5,7 @@ members = [
     "infrastructures",
     "routes",
     "tests",
+    "telemetries",
     "usecases",
     "web-server",
 ]

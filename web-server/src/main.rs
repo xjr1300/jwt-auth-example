@@ -1,9 +1,10 @@
 use dotenvy::dotenv;
 use tracing_subscriber::{fmt::writer::MakeWriterExt, EnvFilter};
 
+use telemetries::{get_subscriber, init_subscriber};
+
 use web_server::configurations::get_settings;
 use web_server::startup::WebApp;
-use web_server::telemetries::{get_subscriber, init_subscriber};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

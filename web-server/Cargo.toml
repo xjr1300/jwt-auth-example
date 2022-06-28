@@ -10,6 +10,7 @@ dotenvy = "0.15"
 once_cell = "1.12"
 routes = { path = "../routes" }
 secrecy = "0.8.0"
+telemetries = { path = "../telemetries" }
 tokio = { version = "1.19", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-appender = "0.2"

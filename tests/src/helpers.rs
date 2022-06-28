@@ -3,10 +3,10 @@ use once_cell::sync::Lazy;
 use sqlx::{postgres::PgPool, Connection, Executor, PgConnection};
 use uuid::Uuid;
 
+use telemetries::{get_subscriber, init_subscriber};
 use web_server::{
     configurations::{get_settings, DatabaseSettings},
     startup::{get_connection_pool, WebApp},
-    telemetries::{get_subscriber, init_subscriber},
 };
 
 /// 環境変数にTEST_LOGがあった場合、トレースを標準出力に出力して、std::io::Sinkに出力する。

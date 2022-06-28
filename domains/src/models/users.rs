@@ -3,7 +3,7 @@ use secrecy::Secret;
 use time::OffsetDateTime;
 use validator::Validate;
 
-use hashed_password::hashed_password;
+use hashed_password::compute_hashed_password;
 
 use crate::models::base::{EmailAddress, EntityId};
 
@@ -135,7 +135,7 @@ impl HashedPassword {
     ///
     /// ハッシュ化パスワードインスタンス。
     pub fn new(password: &RawPassword) -> anyhow::Result<Self> {
-        let value = hashed_password(password.value())?;
+        let value = compute_hashed_password(password.value())?;
 
         Ok(Self { value })
     }

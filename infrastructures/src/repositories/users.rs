@@ -21,6 +21,7 @@ pub enum UserRepositoryError {
     UserNotFoundError(Uuid),
 }
 
+#[derive(Default)]
 pub struct PgUserRepository;
 
 impl PgUserRepository {

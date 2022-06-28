@@ -4,9 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0"
+domains = { path = "../domains" }
+hashed-password = { path = "../hashed-password" }
+infrastructures = { path = "../infrastructures" }
 secrecy = { version = "0.8", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+telemetries = { path = "../telemetries" }
 thiserror = "1.0"
 
 [dependencies.sqlx]
