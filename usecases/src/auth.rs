@@ -7,8 +7,6 @@ use infrastructures::repositories::users::PgUserRepository;
 use telemetries::spawn_blocking_with_tracing;
 
 pub struct AuthInfo {
-    /// セッションID
-    pub session_id: String,
     /// アクセストークン
     pub access_token: String,
     /// リフレッシュトークン
@@ -51,9 +49,14 @@ pub async fn login(
     if let Err(e) = result {
         return Err(LoginError::UnexpectedError(e.into()));
     }
+    // TODO: アクセストークンとリフレッシュトークンを生成
 
+    // TODO: アクセストークンをセッションストア（redis）に登録
+
+    // TODO: リフレッシュトークンをデータベースに登録
+
+    // TODO: トークンを返却
     Ok(AuthInfo {
-        session_id: "session_id".to_owned(),
         access_token: "access_token".to_owned(),
         refresh_token: "refresh_token".to_owned(),
     })
