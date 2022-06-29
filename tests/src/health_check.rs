@@ -2,6 +2,7 @@ extern crate web_server;
 
 mod helpers;
 
+/// ヘルスチェックが正常に動作するか確認するテスト
 #[tokio::test]
 #[ignore]
 async fn test_health_check() {
@@ -12,6 +13,8 @@ async fn test_health_check() {
         .send()
         .await
         .expect("ヘルスチェックに失敗しました。");
-
     assert!(response.status().is_success());
+
+    let body = response.text().await.unwrap();
+    assert_eq!(body, "Are you ready?")
 }
