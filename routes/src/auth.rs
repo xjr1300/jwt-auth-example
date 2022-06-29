@@ -20,15 +20,15 @@ pub async fn login(
     data: web::Json<LoginBody>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
-    let auth_info = auth::login(pool.as_ref(), email_address, data.password.clone())
+    let _auth_info = auth::login(pool.as_ref(), email_address, data.password.clone())
         .await
         .map_err(|e| {
             // トレースログを出力
             tracing::error!("{}", e);
             // TODO: エラー内容に合わせてレスポンスを返却
-            actix_web::error::ErrorBadRequest(e)}
-        )?;
-    
+            actix_web::error::ErrorBadRequest(e)
+        })?;
+
     // TODO: アクセストークンとリフレッシュトークンをクッキーに記録するように指示
 
     Ok(HttpResponse::Ok().finish())
