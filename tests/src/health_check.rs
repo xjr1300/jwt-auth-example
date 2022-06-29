@@ -4,7 +4,7 @@ mod helpers;
 
 #[tokio::test]
 #[ignore]
-async fn health_check_works() {
+async fn test_health_check() {
     let app = helpers::spawn_web_app().await;
     let client = reqwest::Client::new();
     let response = client
