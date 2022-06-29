@@ -3,6 +3,7 @@
         "appender",
         "dotenvy",
         "Hasher",
+        "OWASP",
         "reqwest",
         "sqlx",
         "thiserror",
@@ -15,6 +16,7 @@
         ".git/objects",
         ".vscode",
         ".vscode-insiders",
+        ".cargo/registry",
         "Cargo.lock",
     ]
 }

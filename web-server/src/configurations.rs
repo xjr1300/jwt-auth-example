@@ -1,5 +1,7 @@
 use std::env;
 
+use actix_web::cookie::{time::Duration, SameSite};
+use anyhow::bail;
 use dotenvy::dotenv;
 use once_cell::sync::Lazy;
 use secrecy::{ExposeSecret, Secret};
@@ -12,6 +14,12 @@ pub struct Settings {
     pub rust_log: String,
     /// Webアプリ設定
     pub web_app: WebAppSettings,
+    /// セッション設定
+    pub session_cookie: SessionCookieSettings,
+    /// トークン設定
+    pub tokens: TokensSettings,
+    /// セッションストア設定
+    pub session_store: SessionStoreSettings,
     /// データベース設定
     pub db: DatabaseSettings,
 }
@@ -25,30 +33,77 @@ pub fn get_settings() -> Settings {
     Settings {
         rust_log: ENV_VALUES.rust_log.clone(),
         web_app: WebAppSettings::default(),
+        session_cookie: SessionCookieSettings::default(),
+        tokens: TokensSettings::default(),
+        session_store: SessionStoreSettings::default(),
         db: DatabaseSettings::default(),
+    }
+}
+
+fn str_to_same_site(value: &str) -> anyhow::Result<SameSite> {
+    match value {
+        "none" => Ok(SameSite::None),
+        "lax" => Ok(SameSite::Lax),
+        "strict" => Ok(SameSite::Strict),
+        _ => bail!("文字列からSameSiteを取得できません。"),
     }
 }
 
 /// 環境変数構造体
 pub struct EnvValues {
-    /// RUST_LOG
     pub rust_log: String,
 
-    /// Webアプリホスト名
     pub web_app_host: String,
-    /// Webアプリポート番号
     pub web_app_port: u16,
 
-    /// PostgreSQLユーザー名
+    pub session_cookie_secure: bool,
+    pub session_cookie_same_site: SameSite,
+
+    pub access_token_duration: Duration,
+    pub refresh_token_duration: Duration,
+
+    pub session_store_uri: Secret<String>,
+    pub session_store_key: Secret<String>,
+
     pub postgres_user_name: String,
-    /// PostgreSQLパスワード
     pub postgres_user_password: Secret<String>,
-    /// PostgreSQLホスト名
     pub postgres_host: String,
-    /// PostgreSQLポート番号
     pub postgres_port: u16,
-    /// PostgreSQLデータベース名
     pub postgres_database_name: String,
+}
+
+fn string_from_env(key: &str) -> String {
+    env::var(key).unwrap_or_else(|_| panic!("環境変数に{}が設定されていません。", key))
+}
+
+fn u16_from_env(key: &str) -> u16 {
+    env::var(key)
+        .unwrap_or_else(|_| panic!("環境変数に{}が設定されていません。", key))
+        .parse()
+        .unwrap_or_else(|_| panic!("環境変数{}を数値として認識できません。", key))
+}
+
+fn bool_from_env(key: &str) -> bool {
+    env::var(key)
+        .unwrap_or_else(|_| panic!("環境変数に{}が設定されていません。", key))
+        .parse()
+        .unwrap_or_else(|_| panic!("環境変数{}を論理値として認識できません。", key))
+}
+
+fn same_site_from_env(key: &str) -> SameSite {
+    str_to_same_site(
+        &env::var(key).unwrap_or_else(|_| panic!("環境変数に{}が設定されていません。", key)),
+    )
+    .unwrap_or_else(|_| panic!("環境変数{}をSameSiteとして認識できません。", key))
+}
+
+fn seconds_from_env(key: &str) -> Duration {
+    Duration::seconds(
+        env::var(key)
+            .unwrap_or_else(|_| panic!("環境変数に{}が設定されていません。", key))
+            .parse()
+            .unwrap_or_else(|_| panic!("環境変数{}を秒数として認識できません。", key)),
+    )
 }
 
 /// 環境変数
@@ -57,15 +112,23 @@ pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
 
     EnvValues {
         // Rust設定
-        rust_log: env::var("RUST_LOG").expect("環境変数にRUST_LOGが設定されていません。"),
+        rust_log: string_from_env("RUST_LOG"),
 
         // Webアプリ設定
-        web_app_host: env::var("WEB_APP_HOST")
-            .expect("環境変数にWEB_APP_HOSTが設定されていません。"),
-        web_app_port: env::var("WEB_APP_PORT")
-            .expect("環境変数にWEB_APP_PORTが設定されていません。")
-            .parse::<u16>()
-            .expect("環境変数WEB_APP_PORTを数値として認識できません。"),
+        web_app_host: string_from_env("WEB_APP_HOST"),
+        web_app_port: u16_from_env("WEB_APP_PORT"),
+
+        // セッション設定
+        session_cookie_secure: bool_from_env("SESSION_COOKIE_SECURE"),
+        session_cookie_same_site: same_site_from_env("SESSION_COOKIE_SAME_SITE"),
+
+        // セッションストア設定
+        session_store_uri: Secret::new(string_from_env("SESSION_STORE_URI")),
+        session_store_key: Secret::new(string_from_env("SESSION_STORE_KEY")),
+
+        // トークン設定
+        access_token_duration: seconds_from_env("ACCESS_TOKEN_SECONDS"),
+        refresh_token_duration: seconds_from_env("REFRESH_TOKEN_SECONDS"),
 
         // データベース設定
         postgres_user_name: env::var("POSTGRES_USER_NAME")
@@ -112,6 +175,52 @@ impl WebAppSettings {
     /// Webアプリがバインドするソケットアドレス。
     pub fn socket_address(&self) -> String {
         format!("{}:{}", self.host, self.port)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SessionCookieSettings {
+    pub secure: bool,
+    pub same_site: SameSite,
+}
+
+impl SessionCookieSettings {
+    pub fn default() -> Self {
+        Self {
+            secure: ENV_VALUES.session_cookie_secure,
+            same_site: ENV_VALUES.session_cookie_same_site,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TokensSettings {
+    pub access_token_duration: Duration,
+    pub refresh_token_duration: Duration,
+}
+
+impl TokensSettings {
+    pub fn default() -> Self {
+        Self {
+            access_token_duration: ENV_VALUES.access_token_duration,
+            refresh_token_duration: ENV_VALUES.refresh_token_duration,
+        }
+    }
+}
+
+/// SessionStore設定構造体
+#[derive(Debug, Clone)]
+pub struct SessionStoreSettings {
+    pub uri: Secret<String>,
+    pub key: Secret<String>,
+}
+
+impl SessionStoreSettings {
+    pub fn default() -> Self {
+        Self {
+            uri: ENV_VALUES.session_store_uri.clone(),
+            key: ENV_VALUES.session_store_key.clone(),
+        }
     }
 }
 
