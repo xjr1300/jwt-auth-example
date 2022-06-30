@@ -5,7 +5,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 /// エンティティID構造体
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct EntityId<T> {
     value: Uuid,
     _marker: PhantomData<T>,
@@ -45,8 +45,8 @@ impl<T> EntityId<T> {
     /// # Returns
     ///
     /// ID。
-    pub fn value(&self) -> &Uuid {
-        &self.value
+    pub fn value(&self) -> Uuid {
+        self.value
     }
 }
 

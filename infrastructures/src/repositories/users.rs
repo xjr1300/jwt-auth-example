@@ -218,7 +218,7 @@ impl PgUserRepository {
         .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
         // ユーザーが更新されたか確認
         if result.rows_affected() != 1 {
-            return Err(UserRepositoryError::UserNotFoundError(*user.id().value()));
+            return Err(UserRepositoryError::UserNotFoundError(user.id().value()));
         }
         // 更新日時を取得するため、登録したユーザーを取得
         let updated_user = self.by_id(user.id(), &mut *tx).await?;
@@ -250,7 +250,7 @@ impl PgUserRepository {
         .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
         // ユーザーが削除されたか確認
         if result.rows_affected() != 1 {
-            return Err(UserRepositoryError::UserNotFoundError(*id.value()));
+            return Err(UserRepositoryError::UserNotFoundError(id.value()));
         }
 
         Ok(())
@@ -286,7 +286,7 @@ impl PgUserRepository {
         .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
         // パスワードが更新されたか確認
         if result.rows_affected() != 1 {
-            return Err(UserRepositoryError::UserNotFoundError(*id.value()));
+            return Err(UserRepositoryError::UserNotFoundError(id.value()));
         }
 
         Ok(())
@@ -320,7 +320,7 @@ impl PgUserRepository {
         .map_err(|e| UserRepositoryError::DatabaseError(format!("{}", e)))?;
         // 最終ログイン日時が更新されたか確認
         if result.rows_affected() != 1 {
-            return Err(UserRepositoryError::UserNotFoundError(*id.value()));
+            return Err(UserRepositoryError::UserNotFoundError(id.value()));
         }
 
         Ok(())
