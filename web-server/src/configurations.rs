@@ -59,6 +59,7 @@ pub struct EnvValues {
     pub session_cookie_secure: bool,
     pub session_cookie_same_site: SameSite,
 
+    pub token_secret_key: Secret<String>,
     pub access_token_duration: Duration,
     pub refresh_token_duration: Duration,
 
@@ -127,6 +128,7 @@ pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
         session_store_key: Secret::new(string_from_env("SESSION_STORE_KEY")),
 
         // トークン設定
+        token_secret_key: Secret::new(string_from_env("TOKEN_SECRET_KEY")),
         access_token_duration: seconds_from_env("ACCESS_TOKEN_SECONDS"),
         refresh_token_duration: seconds_from_env("REFRESH_TOKEN_SECONDS"),
 
@@ -195,6 +197,7 @@ impl SessionCookieSettings {
 
 #[derive(Debug, Clone)]
 pub struct TokensSettings {
+    pub secret_key: Secret<String>,
     pub access_token_duration: Duration,
     pub refresh_token_duration: Duration,
 }
@@ -202,6 +205,7 @@ pub struct TokensSettings {
 impl TokensSettings {
     pub fn default() -> Self {
         Self {
+            secret_key: ENV_VALUES.token_secret_key.clone(),
             access_token_duration: ENV_VALUES.access_token_duration,
             refresh_token_duration: ENV_VALUES.refresh_token_duration,
         }
