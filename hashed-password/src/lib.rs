@@ -92,6 +92,7 @@ fn current_unix_epoch() -> u64 {
 /// # Returns
 ///
 /// JWT。
+#[allow(clippy::needless_question_mark)]
 pub fn generate_jwt(
     user_id: Uuid,
     secret_key: &Secret<String>,
