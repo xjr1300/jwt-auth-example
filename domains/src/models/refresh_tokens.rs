@@ -1,9 +1,5 @@
 use time::OffsetDateTime;
 
-pub mod base;
-pub mod refresh_tokens;
-pub mod users;
-
 /// リフレッシュトークン構造体
 pub struct RefreshToken {
     /// セッションID
