@@ -2,6 +2,8 @@ version: "3"
 services:
   postgres:
     image: postgres:latest
+    container_name: jwt-auth-example-postgres
+    hostname: jwt-auth-example-postgres
     ports:
       - 5432:5432
     environment:
@@ -9,8 +11,15 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_USER_PASSWORD}"
       POSTGRES_DB: "${POSTGRES_DATABASE_NAME}"
     volumes:
-      - "${POSTGRES_DATA}:${POSTGRES_CONTAINER_DATA}"
+      - "jwt-auth-example-postgres:${POSTGRES_CONTAINER_DATA}"
   redis:
     image: redis:latest
+    container_name: jwt-auth-example-redis
     ports:
       - 6379:6379
+    volumes:
+      - jwt-auth-example-redis:/data
+
+volumes:
+  jwt-auth-example-postgres:
+  jwt-auth-example-redis:
