@@ -52,7 +52,7 @@ impl WebApp {
                 .wrap(
                     SessionMiddleware::builder(store.clone(), store_key.clone())
                         .session_length(SessionLength::BrowserSession {
-                            state_ttl: Some(tokens.access_token_duration),
+                            state_ttl: Some(tokens.refresh_token_duration),
                         })
                         .cookie_http_only(true)
                         .cookie_same_site(session_cookie.same_site)
