@@ -8,7 +8,10 @@ use configurations::{
     telemetries::spawn_blocking_with_tracing,
     Settings, TokensSettings,
 };
-use domains::models::{base::EmailAddress, users::User};
+use domains::models::{
+    base::EmailAddress,
+    users::{User, UserId},
+};
 use hashed_password::{current_unix_epoch, generate_jwt_pair, verify_password};
 
 #[derive(Debug, thiserror::Error)]
@@ -93,6 +96,27 @@ fn generate_session_data(
     })
 }
 
+/// ユーザーの最終更新日時を更新する。
+///
+/// # Arguments
+///
+/// * `user_id` - 最終更新日時を更新するユーザーのユーザーID。
+///
+/// # Returns
+///
+/// `()`。
+async fn update_last_logged_in(
+    user_id: UserId,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<(), LoginError> {
+    PgUserRepository::default()
+        .update_last_logged_in(user_id, tx)
+        .await
+        .map_err(|e| LoginError::UnexpectedError(e.into()))?;
+
+    Ok(())
+}
+
 pub async fn login(
     email_address: EmailAddress,
     raw_password: Secret<String>,
@@ -119,6 +143,9 @@ pub async fn login(
     session
         .insert(&session_data)
         .map_err(|e| LoginError::UnexpectedError(e.into()))?;
+
+    // ユーザーの最終ログイン日時を更新
+    let _ = update_last_logged_in(user.id(), &mut tx).await?;
 
     // トランザクションをコミット
     tx.commit()
