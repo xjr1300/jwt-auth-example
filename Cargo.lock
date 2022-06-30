@@ -933,9 +933,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "argon2",
+ "hmac",
+ "jwt",
  "rand",
  "secrecy",
+ "sha2",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]
@@ -1151,6 +1155,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3fac17f7123a73ca62df411b1bf727ccc805daa070338fda671c86dac1bdc27"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "jwt"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6204285f77fe7d9784db3fdc449ecce1a0114927a51d5a41c4c7a292011c015f"
+dependencies = [
+ "base64",
+ "crypto-common",
+ "digest",
+ "hmac",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

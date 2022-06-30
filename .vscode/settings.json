@@ -3,6 +3,7 @@
         "appender",
         "dotenvy",
         "Hasher",
+        "Hmac",
         "OWASP",
         "reqwest",
         "sqlx",
