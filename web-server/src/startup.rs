@@ -7,7 +7,7 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 
 use routes::{auth, health_check};
 
-use crate::configurations::{DatabaseSettings, Settings};
+use configurations::{DatabaseSettings, Settings};
 
 /// Webアプリ構造体
 pub struct WebApp {

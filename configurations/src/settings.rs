@@ -24,19 +24,21 @@ pub struct Settings {
     pub db: DatabaseSettings,
 }
 
-/// 環境変数から設定を取得する。
-///
-/// # Returns
-///
-/// 設定インスタンス。
-pub fn get_settings() -> Settings {
-    Settings {
-        rust_log: ENV_VALUES.rust_log.clone(),
-        web_app: WebAppSettings::default(),
-        session_cookie: SessionCookieSettings::default(),
-        tokens: TokensSettings::default(),
-        session_store: SessionStoreSettings::default(),
-        db: DatabaseSettings::default(),
+impl Settings {
+    /// 環境変数から設定を取得する。
+    ///
+    /// # Returns
+    ///
+    /// 設定インスタンス。
+    pub fn default() -> Settings {
+        Settings {
+            rust_log: ENV_VALUES.rust_log.clone(),
+            web_app: WebAppSettings::default(),
+            session_cookie: SessionCookieSettings::default(),
+            tokens: TokensSettings::default(),
+            session_store: SessionStoreSettings::default(),
+            db: DatabaseSettings::default(),
+        }
     }
 }
 

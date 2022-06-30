@@ -74,7 +74,7 @@ pub fn verify_password(
 /// # Returns
 ///
 /// 現在日時を示すUNIXエポック秒。
-fn current_unix_epoch() -> u64 {
+pub fn current_unix_epoch() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()

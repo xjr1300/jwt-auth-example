@@ -3,11 +3,9 @@ use once_cell::sync::Lazy;
 use sqlx::{postgres::PgPool, Connection, Executor, PgConnection};
 use uuid::Uuid;
 
-use telemetries::{get_subscriber, init_subscriber};
-use web_server::{
-    configurations::{get_settings, DatabaseSettings},
-    startup::{get_connection_pool, WebApp},
-};
+use configurations::telemetries::{get_subscriber, init_subscriber};
+use configurations::{DatabaseSettings, Settings};
+use web_server::startup::{get_connection_pool, WebApp};
 
 /// 環境変数にTEST_LOGがあった場合、トレースを標準出力に出力して、std::io::Sinkに出力する。
 /// std::io::sinkは、すべてのデータを消費するライターインスタンスを構築する関数である。
@@ -38,7 +36,7 @@ pub async fn spawn_web_app() -> TestWebApp {
     Lazy::force(&TRACING);
 
     let settings = {
-        let mut s = get_settings();
+        let mut s = Settings::default();
         s.web_app.port = 0; // OSにポート番号を指定してもらうようにポート0を設定
         s.db.database_name = Uuid::new_v4().to_string(); // 新しいテスト用のデータベース
 

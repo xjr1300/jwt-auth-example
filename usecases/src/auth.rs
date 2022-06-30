@@ -1,10 +1,10 @@
 use secrecy::Secret;
 use sqlx::PgPool;
 
+use configurations::telemetries::spawn_blocking_with_tracing;
 use domains::models::base::EmailAddress;
-use hashed_password::verify_password;
+use hashed_password::{current_unix_epoch, generate_jwt_pair, verify_password};
 use infrastructures::repositories::users::PgUserRepository;
-use telemetries::spawn_blocking_with_tracing;
 
 pub struct AuthInfo {
     /// アクセストークン
@@ -50,6 +50,8 @@ pub async fn login(
         return Err(LoginError::UnexpectedError(e.into()));
     }
     // TODO: アクセストークンとリフレッシュトークンを生成
+    let base_epoch = current_unix_epoch();
+    // let (access_token, refresh_token) = generate_jwt_pair(user.id().value(), secret_key, base_epoch, access_duration, refresh_duration)
 
     // TODO: アクセストークンをセッションストア（redis）に登録
 

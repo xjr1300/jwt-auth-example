@@ -458,6 +458,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "configurations"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "dotenvy",
+ "once_cell",
+ "secrecy",
+ "sqlx",
+ "tracing",
+ "tracing-bunyan-formatter",
+ "tracing-log",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2114,17 +2130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "telemetries"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "tracing",
- "tracing-bunyan-formatter",
- "tracing-log",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2144,13 +2149,13 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "configurations",
  "dotenvy",
  "once_cell",
  "reqwest",
  "serde",
  "serde_json",
  "sqlx",
- "telemetries",
  "tokio",
  "tracing-subscriber",
  "uuid",
@@ -2486,6 +2491,7 @@ name = "usecases"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "configurations",
  "domains",
  "hashed-password",
  "infrastructures",
@@ -2493,7 +2499,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
- "telemetries",
  "thiserror",
 ]
 
@@ -2655,12 +2660,12 @@ dependencies = [
  "actix-session",
  "actix-web",
  "anyhow",
+ "configurations",
  "dotenvy",
  "once_cell",
  "routes",
  "secrecy",
  "sqlx",
- "telemetries",
  "time",
  "tokio",
  "tracing",

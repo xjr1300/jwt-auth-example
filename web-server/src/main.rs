@@ -1,9 +1,9 @@
 use dotenvy::dotenv;
 use tracing_subscriber::{fmt::writer::MakeWriterExt, EnvFilter};
 
-use telemetries::{get_subscriber, init_subscriber};
+use configurations::telemetries::{get_subscriber, init_subscriber};
+use configurations::Settings;
 
-use web_server::configurations::get_settings;
 use web_server::startup::WebApp;
 
 #[tokio::main]
@@ -11,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
     // 設定を取得
-    let settings = get_settings();
+    let settings = Settings::default();
 
     // トレーシングログを設定
     let path = std::env::current_dir().expect("カレントディレクトリの検知に失敗しました。");
