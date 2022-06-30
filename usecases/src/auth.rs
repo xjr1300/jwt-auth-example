@@ -120,6 +120,11 @@ pub async fn login(
         .insert(&session_data)
         .map_err(|e| LoginError::UnexpectedError(e.into()))?;
 
+    // トランザクションをコミット
+    tx.commit()
+        .await
+        .map_err(|e| LoginError::UnexpectedError(e.into()))?;
+
     // セッションデータを返却
     Ok(session_data)
 }
