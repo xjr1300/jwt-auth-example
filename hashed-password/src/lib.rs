@@ -81,50 +81,26 @@ pub fn current_unix_epoch() -> u64 {
         .as_secs()
 }
 
-/// JWTを生成する。
-///
-/// # Arguments
-///
-/// * `user_id` - ユーザーID。
-/// * `secret` - JWT生成鍵。
-/// * `duration` - トークンの有効秒数。
-///
-/// # Returns
-///
-/// JWT。
-#[allow(clippy::needless_question_mark)]
-pub fn generate_jwt(
-    user_id: Uuid,
-    secret_key: &Secret<String>,
-    duration: u64,
-) -> anyhow::Result<String> {
-    let now = current_unix_epoch();
-
-    Ok(_generate_jwt(user_id, secret_key, now, duration)?)
-}
-
 /// 有効期限の開始を指定したJWTを生成する。
 ///
 /// # Arguments
 ///
 /// * `user_id` - ユーザーID。
 /// * `secret` - JWT生成鍵。
-/// * `base_epoch` - 有効期限の開始を示すUNIXエポック秒。
-/// * `duration` - トークンの有効秒数。
+/// * `expiration` - トークンの有効期限を示すUNIXエポック秒。
 ///
 /// # Returns
 ///
 /// JWT。
-fn _generate_jwt(
+fn generate_jwt(
     user_id: Uuid,
     secret_key: &Secret<String>,
-    base_epoch: u64,
-    duration: u64,
+    expiration: u64,
 ) -> anyhow::Result<String> {
     let key: Hmac<Sha256> = Hmac::new_from_slice(secret_key.expose_secret().as_bytes())?;
     let mut claims = BTreeMap::new();
     claims.insert("sub", user_id.to_string());
-    claims.insert("exp", (base_epoch + duration).to_string());
+    claims.insert("exp", expiration.to_string());
 
     Ok(claims.sign_with_key(&key)?)
 }
@@ -135,8 +111,8 @@ fn _generate_jwt(
 ///
 /// * `user_id` - ユーザーID。
 /// * `secret` - JWT生成鍵。
-/// * `access_duration` - アクセストークンの有効秒数。
-/// * `refresh_duration` - リフレッシュトークンの有効秒数。
+/// * `access_expiration` - アクセストークンの有効期限を示すUNIXエポック秒。
+/// * `refresh_expiration` - リフレッシュトークンの有効期限を示すUNIXエポック秒。
 ///
 /// # Returns
 ///
@@ -144,13 +120,12 @@ fn _generate_jwt(
 pub fn generate_jwt_pair(
     user_id: Uuid,
     secret_key: &Secret<String>,
-    base_epoch: u64,
-    access_duration: u64,
-    refresh_duration: u64,
+    access_expiration: u64,
+    refresh_expiration: u64,
 ) -> anyhow::Result<(String, String)> {
     Ok((
-        _generate_jwt(user_id, secret_key, base_epoch, access_duration)?,
-        _generate_jwt(user_id, secret_key, base_epoch, refresh_duration)?,
+        generate_jwt(user_id, secret_key, access_expiration)?,
+        generate_jwt(user_id, secret_key, refresh_expiration)?,
     ))
 }
 
@@ -214,7 +189,7 @@ mod tests {
         let secret_key = Secret::new("some-secret".to_owned());
         let now = current_unix_epoch();
         let duration: u64 = 300;
-        let token = _generate_jwt(user_id, &secret_key, now, duration).unwrap();
+        let token = generate_jwt(user_id, &secret_key, now + duration).unwrap();
         // JWTを検証
         let claim = get_claim_from_jwt(&token, &secret_key).unwrap();
         assert_eq!(claim.user_id, user_id);
@@ -227,11 +202,10 @@ mod tests {
         let user_id = Uuid::new_v4();
         let secret_key = Secret::new("some-secret".to_owned());
         let now = current_unix_epoch();
-        let access_duration: u64 = 300;
-        let refresh_duration: u64 = 3600;
+        let access_expiration: u64 = now + 300;
+        let refresh_expiration: u64 = now + 3600;
         let (access, refresh) =
-            generate_jwt_pair(user_id, &secret_key, now, access_duration, refresh_duration)
-                .unwrap();
+            generate_jwt_pair(user_id, &secret_key, access_expiration, refresh_expiration).unwrap();
         assert_ne!(
             access, refresh,
             "アクセストークンとリフレッシュトークンが同じです。"
