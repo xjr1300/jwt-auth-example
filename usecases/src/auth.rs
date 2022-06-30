@@ -15,10 +15,10 @@ pub struct AuthInfo {
 
 #[derive(Debug, thiserror::Error)]
 pub enum LoginError {
+    #[error(transparent)]
+    UnexpectedError(anyhow::Error),
     #[error("Eメールアドレスまたはパスワードが異なります。")]
     InvalidCredentials,
-    #[error("想定していないエラーが発生しました。{0}")]
-    UnexpectedError(#[from] anyhow::Error),
 }
 
 /// データベースからユーザーを取得して、パスワードを検証する。
@@ -40,7 +40,7 @@ async fn validate_credentials(
 ) -> Result<User, LoginError> {
     // Eメールアドレスからユーザーを取得
     let result = PgUserRepository::default()
-        .by_email_address(&email_address, tx)
+        .get_by_email_address(&email_address, tx)
         .await
         .map_err(|e| LoginError::UnexpectedError(e.into()))?;
     if result.is_none() {
