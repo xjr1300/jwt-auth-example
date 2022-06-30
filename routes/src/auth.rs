@@ -3,6 +3,7 @@ use secrecy::Secret;
 use serde::Deserialize;
 use sqlx::PgPool;
 
+use configurations::Settings;
 use domains::models::base::EmailAddress;
 use usecases::auth::{self, LoginError};
 
@@ -17,21 +18,27 @@ pub struct LoginData {
 
 #[tracing::instrument(name = "login")]
 pub async fn login(
-    pool: web::Data<PgPool>,
     data: web::Json<LoginData>,
+    settings: web::Data<Settings>,
+    pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
-    let _auth_info = auth::login(pool.as_ref(), email_address, data.password.clone())
-        .await
-        .map_err(|e| {
-            // トレースログを出力
-            tracing::error!("{}", e);
-            // エラー内容に合わせてレスポンスを返却
-            match e {
-                LoginError::InvalidCredentials => actix_web::error::ErrorUnauthorized(e),
-                LoginError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
-            }
-        })?;
+    let _auth_info = auth::login(
+        email_address,
+        data.password.clone(),
+        settings.as_ref(),
+        pool.as_ref(),
+    )
+    .await
+    .map_err(|e| {
+        // トレースログを出力
+        tracing::error!("{}", e);
+        // エラー内容に合わせてレスポンスを返却
+        match e {
+            LoginError::InvalidCredentials => actix_web::error::ErrorUnauthorized(e),
+            LoginError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
+        }
+    })?;
 
     // TODO: アクセストークンとリフレッシュトークンをクッキーに記録するように指示
 

@@ -1762,6 +1762,7 @@ name = "routes"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "configurations",
  "domains",
  "secrecy",
  "serde",
