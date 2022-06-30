@@ -113,8 +113,9 @@ pub async fn login(
     let Settings { tokens, .. } = settings;
     let session_data = generate_session_data(user.id().value(), tokens)?;
 
-    // セッションを更新して、セッションデータをセッションストアに登録
+    // セッション固定化攻撃に対する対策として、セッションを更新
     session.renew();
+    // セッションデータをセッションストアに登録
     session
         .insert(&session_data)
         .map_err(|e| LoginError::UnexpectedError(e.into()))?;
