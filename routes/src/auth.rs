@@ -38,6 +38,7 @@ pub async fn login(
         // エラー内容に合わせてレスポンスを返却
         match e {
             LoginError::InvalidCredentials => actix_web::error::ErrorUnauthorized(e),
+            LoginError::NotActive(_) => actix_web::error::ErrorUnauthorized(e),
             LoginError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
         }
     })?;

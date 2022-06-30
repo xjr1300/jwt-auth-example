@@ -20,6 +20,8 @@ pub enum LoginError {
     UnexpectedError(anyhow::Error),
     #[error("Eメールアドレスまたはパスワードが異なります。")]
     InvalidCredentials,
+    #[error("ユーザー({0})が無効になっています。")]
+    NotActive(Uuid),
 }
 
 /// データベースからユーザーを取得して、パスワードを検証する。
@@ -132,6 +134,11 @@ pub async fn login(
 
     // データベースからユーザーを取得して、パスワードを検証
     let user = validate_credentials(email_address, raw_password, &mut tx).await?;
+
+    // ユーザーがアクティブでない場合は、エラーを返却が確認
+    if !user.is_active() {
+        return Err(LoginError::NotActive(user.id().value()));
+    }
 
     // セッションデータを生成
     let Settings { tokens, .. } = settings;
