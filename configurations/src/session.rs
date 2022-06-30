@@ -2,6 +2,23 @@ use std::future::{ready, Ready};
 
 use actix_session::{Session, SessionExt};
 use actix_web::{dev::Payload, FromRequest, HttpRequest};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+/// セッションデータ構造体
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionData {
+    /// ユーザーID
+    pub user_id: Uuid,
+    /// アクセストークン
+    pub access_token: String,
+    /// アクセストークン有効期限（UNIXエポック秒）
+    pub access_expiration: u64,
+    /// リフレッシュトークン
+    pub refresh_token: String,
+    /// リフレッシュトークン有効期限（UNIXエポック秒）
+    pub refresh_expiration: u64,
+}
 
 /// 型付けセッション構造体
 ///
@@ -9,34 +26,45 @@ use actix_web::{dev::Payload, FromRequest, HttpRequest};
 pub struct TypedSession(Session);
 
 impl TypedSession {
-    /// Redisに登録するユーザーIDキー名
-    const ACCESS_TOKEN_KEY: &'static str = "access_token";
+    const SESSION_DATA_KEY: &'static str = "session_data";
+
+    /// セッションデータを取得する。
+    ///
+    /// # Returns
+    ///
+    /// セッションデータ。
+    pub fn get(&self) -> Result<Option<SessionData>, serde_json::Error> {
+        self.0.get(Self::SESSION_DATA_KEY)
+    }
+
+    /// セッションデータを登録する。
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - セッションデータ。
+    pub fn insert(&self, data: &SessionData) -> Result<(), serde_json::Error> {
+        self.0.insert(Self::SESSION_DATA_KEY, data)
+    }
+
+    /// セッションデータを削除する。
+    pub fn remove(&self) -> Option<String> {
+        self.0.remove(Self::SESSION_DATA_KEY)
+    }
+
+    /// セッションをクリアする。
+    pub fn clear(&self) {
+        self.0.clear()
+    }
 
     /// セッションを更新する。
+    ///
+    /// 既存のセッションデータは、新しいセッションIDに割り当てられる。
     pub fn renew(&self) {
         self.0.renew();
     }
 
-    /// アクセストークンを登録する。
-    ///
-    /// # Arguments
-    ///
-    /// * `token` - アクセストークン。
-    pub fn insert(&self, token: &str) -> Result<(), serde_json::Error> {
-        self.0.insert(Self::ACCESS_TOKEN_KEY, token)
-    }
-
-    /// セッションに紐づけられたアクセストークンを取得する。
-    ///
-    /// # Returns
-    ///
-    /// アクセストークン。
-    pub fn token(&self) -> Result<Option<String>, serde_json::Error> {
-        self.0.get(Self::ACCESS_TOKEN_KEY)
-    }
-
-    /// セッションに紐づけられたアクセストークンを削除する。
-    pub fn delete(&self) {
+    /// セッションストアからセッションデータを削除して、クライアントのセッションを削除する。
+    pub fn purge(&self) {
         self.0.purge()
     }
 }
