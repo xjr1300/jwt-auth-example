@@ -9,8 +9,8 @@ use configurations::{
     Settings, TokensSettings,
 };
 use domains::models::{
-    base::EmailAddress,
     users::{User, UserId},
+    EmailAddress,
 };
 use hashed_password::{current_unix_epoch, generate_jwt_pair, verify_password};
 

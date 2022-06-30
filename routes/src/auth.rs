@@ -4,7 +4,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 use configurations::{session::TypedSession, Settings};
-use domains::models::base::EmailAddress;
+use domains::models::EmailAddress;
 use usecases::auth::{self, LoginError};
 
 use crate::responses::e400;

@@ -2,8 +2,8 @@ use secrecy::ExposeSecret;
 use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
 
-use domains::models::base::EmailAddress;
 use domains::models::users::{HashedPassword, User, UserId, UserName};
+use domains::models::EmailAddress;
 
 #[derive(Debug, thiserror::Error)]
 pub enum UserRepositoryError {
