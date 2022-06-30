@@ -198,7 +198,15 @@ mod tests {
     use super::*;
     use uuid::Uuid;
 
-    /// JWTを生成できることを確認するテスト
+    /// パスワードを正常にハッシュ化できることを確認するテスト
+    #[test]
+    fn test_hashed_password() {
+        let password = Secret::new("some-password".to_owned());
+        let hashed = compute_hashed_password(&password).unwrap();
+        assert!(verify_password(&hashed, &password).is_ok())
+    }
+
+    /// JWTを正常に生成できることを確認するテスト
     #[test]
     fn test_generate_jwt() {
         // JWTを生成
