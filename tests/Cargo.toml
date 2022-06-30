@@ -8,24 +8,29 @@ publish = false
 anyhow = "1.0"
 actix-web = "4.1"
 dotenvy = "0.15"
-web-server = { path = "../web-server" }
 once_cell = "1.12"
 reqwest = { version = "0.11", default-features = false, features = [
     "json",
     "rustls-tls",
     "cookies"
 ] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 telemetries = { path = "../telemetries" }
 tokio = { version = "1.19", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 uuid = { version = "1.1", features = ["v4"] }
+web-server = { path = "../web-server" }
 
 [dependencies.sqlx]
 version = "0.6"
 default-features = false
 features = ["runtime-tokio-rustls", "macros", "postgres", "uuid", "time", "migrate", "offline"]
 
-
 [[test]]
 name = "health_check"
-path = "src/health_check.rs"
+path = "src/test_health_check.rs"
+
+[[test]]
+name = "auth"
+path = "src/test_auth.rs"

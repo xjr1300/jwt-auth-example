@@ -4,12 +4,13 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 use domains::models::base::EmailAddress;
-use usecases::auth;
+use usecases::auth::{self, LoginError};
 
 use crate::responses::e400;
 
 #[derive(Debug, Deserialize)]
-pub struct LoginBody {
+#[serde(rename_all = "camelCase")]
+pub struct LoginData {
     pub email_address: String,
     pub password: Secret<String>,
 }
@@ -17,7 +18,7 @@ pub struct LoginBody {
 #[tracing::instrument(name = "login")]
 pub async fn login(
     pool: web::Data<PgPool>,
-    data: web::Json<LoginBody>,
+    data: web::Json<LoginData>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
     let _auth_info = auth::login(pool.as_ref(), email_address, data.password.clone())
@@ -25,8 +26,11 @@ pub async fn login(
         .map_err(|e| {
             // トレースログを出力
             tracing::error!("{}", e);
-            // TODO: エラー内容に合わせてレスポンスを返却
-            actix_web::error::ErrorBadRequest(e)
+            // エラー内容に合わせてレスポンスを返却
+            match e {
+                LoginError::InvalidCredentials => actix_web::error::ErrorUnauthorized(e),
+                LoginError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
+            }
         })?;
 
     // TODO: アクセストークンとリフレッシュトークンをクッキーに記録するように指示

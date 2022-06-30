@@ -13,8 +13,14 @@ async fn test_health_check() {
         .send()
         .await
         .expect("ヘルスチェックAPIにアクセスできませんでした。");
-    assert!(response.status().is_success(), "ヘルスチェックAPIが20x以外を返却しました。");
+    assert!(
+        response.status().is_success(),
+        "ヘルスチェックAPIが20x以外を返却しました。"
+    );
 
     let body = response.text().await.unwrap();
-    assert_eq!(body, "Are you ready?", "ヘルスチェックAPIが返却したボディが想定と一致しません。")
+    assert_eq!(
+        body, "Are you ready?",
+        "ヘルスチェックAPIが返却したボディが想定と一致しません。"
+    )
 }

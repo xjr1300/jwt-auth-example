@@ -2128,6 +2128,8 @@ dependencies = [
  "dotenvy",
  "once_cell",
  "reqwest",
+ "serde",
+ "serde_json",
  "sqlx",
  "telemetries",
  "tokio",
