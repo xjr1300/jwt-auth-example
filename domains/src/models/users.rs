@@ -230,8 +230,8 @@ impl User {
     /// # Returns
     ///
     /// ユーザーIDインスタンス。
-    pub fn id(&self) -> &UserId {
-        &self.id
+    pub fn id(&self) -> UserId {
+        self.id.clone()
     }
 
     /// ユーザー名を返却する。

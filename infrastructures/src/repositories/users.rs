@@ -91,7 +91,7 @@ impl PgUserRepository {
     /// ユーザーインスタンス。ユーザーが見つからなかった場合は`None`。
     pub async fn get_by_id(
         &self,
-        id: &UserId,
+        id: UserId,
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<Option<User>, UserRepositoryError> {
         // データーベースに問い合わせ
@@ -300,9 +300,9 @@ impl PgUserRepository {
     ///
     /// * `id` - 最終ログイン日時を設定するユーザーのID。
     /// * `tx` - トランサクジョン。
-    pub async fn set_last_logged_in(
+    pub async fn update_last_logged_in(
         &self,
-        id: &UserId,
+        id: UserId,
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<(), UserRepositoryError> {
         // データベースを操作
