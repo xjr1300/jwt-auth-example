@@ -3,7 +3,7 @@ use secrecy::Secret;
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use configurations::Settings;
+use configurations::{session::TypedSession, Settings};
 use domains::models::base::EmailAddress;
 use usecases::auth::{self, LoginError};
 
@@ -16,10 +16,11 @@ pub struct LoginData {
     pub password: Secret<String>,
 }
 
-#[tracing::instrument(name = "login")]
+#[tracing::instrument(skip(session, pool), name = "Login user")]
 pub async fn login(
     data: web::Json<LoginData>,
     settings: web::Data<Settings>,
+    session: TypedSession,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
@@ -27,6 +28,7 @@ pub async fn login(
         email_address,
         data.password.clone(),
         settings.as_ref(),
+        &session,
         pool.as_ref(),
     )
     .await

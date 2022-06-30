@@ -212,6 +212,24 @@ impl TokensSettings {
             refresh_token_duration: ENV_VALUES.refresh_token_duration,
         }
     }
+
+    /// アクセストークンの有効秒数を返却する。
+    ///
+    /// # Returns
+    ///
+    /// アクセストークンの有効秒数。
+    pub fn access_token_duration(&self) -> u64 {
+        self.access_token_duration.as_seconds_f64() as u64
+    }
+
+    /// リフレッシュトークンの有効秒数を返却する。
+    ///
+    /// # Returns
+    ///
+    /// リフレッシュトークンの有効秒数。
+    pub fn refresh_token_duration(&self) -> u64 {
+        self.refresh_token_duration.as_seconds_f64() as u64
+    }
 }
 
 /// SessionStore設定構造体
