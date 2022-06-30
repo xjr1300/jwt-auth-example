@@ -35,7 +35,9 @@ impl WebApp {
             session_store,
             db,
             ..
-        } = settings;
+        } = settings.clone();
+        let settings = web::Data::new(settings);
+
         let pool = web::Data::new(get_connection_pool(&db));
 
         let listener = TcpListener::bind(web_app.socket_address())?;
@@ -57,6 +59,7 @@ impl WebApp {
                         .cookie_secure(session_cookie.secure)
                         .build(),
                 )
+                .app_data(settings.clone())
                 .app_data(pool.clone())
                 .route("/health_check", web::get().to(health_check::health_check))
                 .service(web::scope("/auth").route("/login", web::post().to(auth::login)))
