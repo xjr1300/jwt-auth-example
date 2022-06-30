@@ -31,3 +31,9 @@ async fn test_anonymous_user_unauthorized() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }
+
+// TODO; Eメールアドレスが一致して、パスワードが異なるユーザーが認証されないことを確認するテスト
+
+// TODO; Eメールアドレスとパスワードが一致して、アクティブでないユーザーが認証されないことを確認するテスト
+
+// TODO; Eメールアドレスとパスワードが一致して、アクティブなユーザーが認証されることを確認するテスト
