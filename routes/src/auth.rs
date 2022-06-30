@@ -24,7 +24,7 @@ pub async fn login(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
-    let _auth_info = auth::login(
+    let _session_data = auth::login(
         email_address,
         data.password.clone(),
         settings.as_ref(),

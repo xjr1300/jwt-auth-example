@@ -1,17 +1,15 @@
+use infrastructures::repositories::users::PgUserRepository;
 use secrecy::Secret;
 use sqlx::{PgPool, Postgres, Transaction};
+use uuid::Uuid;
 
-use configurations::{session::TypedSession, telemetries::spawn_blocking_with_tracing, Settings};
+use configurations::{
+    session::{SessionData, TypedSession},
+    telemetries::spawn_blocking_with_tracing,
+    Settings, TokensSettings,
+};
 use domains::models::{base::EmailAddress, users::User};
 use hashed_password::{current_unix_epoch, generate_jwt_pair, verify_password};
-use infrastructures::repositories::users::PgUserRepository;
-
-pub struct AuthInfo {
-    /// アクセストークン
-    pub access_token: String,
-    /// リフレッシュトークン
-    pub refresh_token: String,
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum LoginError {
@@ -61,13 +59,47 @@ async fn validate_credentials(
     Ok(user)
 }
 
+/// セッションデータを生成する。
+///
+/// # Arguments
+///
+/// * `user_id` - ユーザーID。
+/// * `token_settings` - トークン設定。
+///
+/// # Returns
+///
+/// セッションデータ。
+fn generate_session_data(
+    user_id: Uuid,
+    token_settings: &TokensSettings,
+) -> Result<SessionData, LoginError> {
+    let base_epoch = current_unix_epoch();
+    let access_expiration = base_epoch + token_settings.access_token_duration();
+    let refresh_expiration = base_epoch + token_settings.refresh_token_duration();
+    let (access_token, refresh_token) = generate_jwt_pair(
+        user_id,
+        &token_settings.secret_key,
+        access_expiration,
+        refresh_expiration,
+    )
+    .map_err(LoginError::UnexpectedError)?;
+
+    Ok(SessionData {
+        user_id,
+        access_token,
+        access_expiration,
+        refresh_token,
+        refresh_expiration,
+    })
+}
+
 pub async fn login(
     email_address: EmailAddress,
     raw_password: Secret<String>,
     settings: &Settings,
     session: &TypedSession,
     pool: &PgPool,
-) -> anyhow::Result<AuthInfo, LoginError> {
+) -> anyhow::Result<SessionData, LoginError> {
     // トランザクションを開始
     let mut tx = pool
         .begin()
@@ -77,29 +109,16 @@ pub async fn login(
     // データベースからユーザーを取得して、パスワードを検証
     let user = validate_credentials(email_address, raw_password, &mut tx).await?;
 
-    // アクセストークンとリフレッシュトークンを生成
+    // セッションデータを生成
     let Settings { tokens, .. } = settings;
-    let base_epoch = current_unix_epoch();
-    let (access_token, refresh_token) = generate_jwt_pair(
-        user.id().value(),
-        &settings.tokens.secret_key,
-        base_epoch,
-        tokens.access_token_duration(),
-        tokens.refresh_token_duration(),
-    )
-    .map_err(LoginError::UnexpectedError)?;
+    let session_data = generate_session_data(user.id().value(), tokens)?;
 
-    // セッションを更新して、アクセストークンをセッションストア（redis）に登録
+    // セッションを更新して、セッションデータをセッションストアに登録
     session.renew();
     session
-        .insert(&access_token)
+        .insert(&session_data)
         .map_err(|e| LoginError::UnexpectedError(e.into()))?;
 
-    // TODO: リフレッシュトークンをデータベースに登録
-
-    // トークンを返却
-    Ok(AuthInfo {
-        access_token,
-        refresh_token,
-    })
+    // セッションデータを返却
+    Ok(session_data)
 }
