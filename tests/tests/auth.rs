@@ -118,13 +118,14 @@ async fn active_user_authorized() {
     };
 
     // FIXME: Redisにセッションデータが記録されているか確認
-    // actix-sessionは、ソースコードを確認した結果、ブラウザに暗号化したセッションIDをクッキーとして保存するように指示しているように見える。
-    // 暗号化する際に使用するキーは、おそらくセッションミドルウェアを構築するときに指定しており、本プログラムでは環境変数SESSION_STORE_KEY
-    // 及び`settings.session_store.keyが該当するのではないか。
+    // actix-sessionは、actix-sessionが生成したセッションIDを加工した文字列を保存ことをブラウザに指示しているように見える。
+    // また、加工する際に使用する鍵は、本プログラムにおいては環境変数SESSION_STORE_KEY及び`settings.session_store.keyが
+    // 該当する。
+    // https://github.com/actix/actix-extras/blob/d11a2723841d1eb376c1fbfbda8f432ad2d7d9c6/actix-session/src/middleware.rs#L601
     // 暗号化したセッションIDを複合する方法を把握した後に、本テストを実装すること。
+    // https://github.com/actix/actix-extras/blob/d11a2723841d1eb376c1fbfbda8f432ad2d7d9c6/actix-session/src/middleware.rs#L522
     // let client = redis::Client::open(session_store.uri.expose_secret().as_str()).unwrap();
     // let mut conn = client.get_connection().unwrap();
     // 下の行で、セッションデータの取得を試みるが、Redisはnilを返却する。
     // let _session_data: String = conn.get(session_id).unwrap();
-    // actix-sessionがクッキーに保存するように指示したセッションIDの値は、Redisに登録されているキーとは一致しないことを確認した。
 }
