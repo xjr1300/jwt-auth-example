@@ -154,7 +154,7 @@ pub async fn login(
         .map_err(|e| LoginError::UnexpectedError(e.into()))?;
 
     // ユーザーの最終ログイン日時を更新
-    let _ = update_last_logged_in(user.id(), &mut tx).await?;
+    update_last_logged_in(user.id(), &mut tx).await?;
 
     // トランザクションをコミット
     tx.commit()
