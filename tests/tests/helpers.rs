@@ -1,5 +1,6 @@
 use dotenvy::dotenv;
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPool, Connection, Executor, PgConnection};
 use uuid::Uuid;
 
@@ -23,6 +24,13 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     };
 });
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoginData {
+    pub email_address: String,
+    pub password: String,
+}
+
 /// テスト用Webアプリ構造体
 pub struct TestWebApp {
     pub web_app_address: String,
@@ -30,6 +38,28 @@ pub struct TestWebApp {
     pub pool: PgPool,
     pub api_client: reqwest::Client,
     pub test_users: TestUsers,
+}
+
+impl TestWebApp {
+    /// ヘルスチェックAPIを呼び出す。
+    pub async fn call_health_check_api(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/health_check", self.web_app_address))
+            .send()
+            .await
+            .expect("ヘルスチェックAPIにアクセスできませんでした。")
+    }
+
+    /// ログインAPIを呼び出す。
+    pub async fn call_login_api(&self, data: &LoginData) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/auth/login", self.web_app_address))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .json(&data)
+            .send()
+            .await
+            .expect("ログインAPIにアクセスできませんでした。")
+    }
 }
 
 /// テスト用Webアプリを生成する。

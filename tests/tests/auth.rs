@@ -1,33 +1,17 @@
 extern crate web_server;
 
-use serde::{Deserialize, Serialize};
-
-use crate::helpers::spawn_web_app;
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LoginData {
-    email_address: String,
-    password: String,
-}
+use crate::helpers::{spawn_web_app, LoginData};
 
 /// 登録されていないユーザーが認証されないことを確認するテスト
 #[tokio::test]
 #[ignore]
-async fn test_anonymous_user_unauthorized() {
+async fn anonymous_user_unauthorized() {
     let app = spawn_web_app().await;
     let data = LoginData {
         email_address: "anonymous@example.com".to_owned(),
         password: "anonymous-password".to_owned(),
     };
-    let client = reqwest::Client::new();
-    let response = client
-        .post(&format!("{}/auth/login", app.web_app_address))
-        .header(reqwest::header::CONTENT_TYPE, "application/json")
-        .json(&data)
-        .send()
-        .await
-        .expect("ログインAPIにアクセスできませんでした。");
+    let response = app.call_login_api(&data).await;
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }
