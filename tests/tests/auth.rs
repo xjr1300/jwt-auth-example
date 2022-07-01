@@ -21,13 +21,9 @@ async fn anonymous_user_unauthorized() {
 #[ignore]
 async fn user_unauthorized_when_wrong_password() {
     let app = spawn_web_app().await;
+    let user = &app.test_users.active_user;
     let data = LoginData {
-        email_address: app
-            .test_users
-            .active_user
-            .email_address()
-            .value()
-            .to_owned(),
+        email_address: user.email_address().value().to_owned(),
         password: "wrong-password".to_owned(),
     };
     let response = app.call_login_api(&data).await;
@@ -40,13 +36,9 @@ async fn user_unauthorized_when_wrong_password() {
 #[ignore]
 async fn non_active_user_unauthorized() {
     let app = spawn_web_app().await;
+    let user = &app.test_users.non_active_user;
     let data = LoginData {
-        email_address: app
-            .test_users
-            .non_active_user
-            .email_address()
-            .value()
-            .to_owned(),
+        email_address: user.email_address().value().to_owned(),
         password: app.test_users.non_active_user_password.clone(),
     };
     let response = app.call_login_api(&data).await;
