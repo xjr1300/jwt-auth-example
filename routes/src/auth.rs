@@ -3,7 +3,10 @@ use secrecy::Secret;
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use configurations::{session::TypedSession, Settings};
+use configurations::{
+    session::{add_session_data_cookies, TypedSession},
+    Settings,
+};
 use domains::models::EmailAddress;
 use usecases::auth::{self, LoginError};
 
@@ -24,7 +27,7 @@ pub async fn login(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
-    let _session_data = auth::login(
+    let session_data = auth::login(
         email_address,
         data.password.clone(),
         settings.as_ref(),
@@ -43,7 +46,11 @@ pub async fn login(
         }
     })?;
 
-    // TODO: アクセストークンとリフレッシュトークンをクッキーに記録するように指示
-
-    Ok(HttpResponse::Ok().finish())
+    // セッションデータをクッキーに追加するように指示してレスポンスを返却
+    Ok(add_session_data_cookies(
+        HttpResponse::Ok(),
+        &session_data,
+        &settings.as_ref().session_cookie,
+    )
+    .finish())
 }
