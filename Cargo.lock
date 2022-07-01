@@ -1743,6 +1743,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "reqwest_cookie_store"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fc7d9a4063adcdfbb061aa3011b813cce95d3a8990f9ccb5ea85017916a1b0b"
+dependencies = [
+ "bytes",
+ "cookie",
+ "cookie_store",
+ "reqwest",
+ "url",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2155,6 +2168,7 @@ dependencies = [
  "dotenvy",
  "once_cell",
  "reqwest",
+ "reqwest_cookie_store",
  "secrecy",
  "serde",
  "serde_json",
