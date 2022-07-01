@@ -54,6 +54,7 @@ impl WebApp {
                         .session_length(SessionLength::BrowserSession {
                             state_ttl: Some(tokens.refresh_token_duration),
                         })
+                        .cookie_name(session_cookie.session_id_cookie_name.clone())
                         .cookie_http_only(true)
                         .cookie_same_site(session_cookie.same_site)
                         .cookie_secure(session_cookie.secure)

@@ -58,6 +58,7 @@ pub struct EnvValues {
     pub web_app_host: String,
     pub web_app_port: u16,
 
+    pub session_id_cookie_name: String,
     pub session_cookie_secure: bool,
     pub session_cookie_same_site: SameSite,
 
@@ -122,6 +123,7 @@ pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
         web_app_port: u16_from_env("WEB_APP_PORT"),
 
         // セッション設定
+        session_id_cookie_name: string_from_env("SESSION_ID_COOKIE_NAME"),
         session_cookie_secure: bool_from_env("SESSION_COOKIE_SECURE"),
         session_cookie_same_site: same_site_from_env("SESSION_COOKIE_SAME_SITE"),
 
@@ -184,6 +186,7 @@ impl WebAppSettings {
 
 #[derive(Debug, Clone)]
 pub struct SessionCookieSettings {
+    pub session_id_cookie_name: String,
     pub secure: bool,
     pub same_site: SameSite,
 }
@@ -191,6 +194,7 @@ pub struct SessionCookieSettings {
 impl SessionCookieSettings {
     pub fn default() -> Self {
         Self {
+            session_id_cookie_name: ENV_VALUES.session_id_cookie_name.clone(),
             secure: ENV_VALUES.session_cookie_secure,
             same_site: ENV_VALUES.session_cookie_same_site,
         }
