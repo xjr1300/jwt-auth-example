@@ -36,6 +36,7 @@ pub struct LoginData {
 
 /// テスト用Webアプリ構造体
 pub struct TestWebApp {
+    pub settings: Settings,
     pub web_app_address: String,
     pub port: u16,
     pub pool: PgPool,
@@ -104,6 +105,7 @@ pub async fn spawn_web_app() -> TestWebApp {
         .unwrap();
 
     let web_app = TestWebApp {
+        settings: settings.clone(),
         web_app_address: format!("http://localhost:{}", port),
         port,
         pool: get_connection_pool(&settings.db),
