@@ -16,7 +16,7 @@ async fn anonymous_user_unauthorized() {
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }
 
-// Eメールアドレスが一致して、パスワードが誤っている場合に、ユーザーが認証されないことを確認するテスト
+// Eメールアドレスが正しくて、パスワードが誤っている場合に、ユーザーが認証されないことを確認するテスト
 #[tokio::test]
 #[ignore]
 async fn user_unauthorized_when_wrong_password() {
@@ -35,6 +35,23 @@ async fn user_unauthorized_when_wrong_password() {
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }
 
-// TODO; Eメールアドレスとパスワードが一致して、アクティブでないユーザーが認証されないことを確認するテスト
+// Eメールアドレスとパスワードが正しくて、アクティブでないユーザーが認証されないことを確認するテスト
+#[tokio::test]
+#[ignore]
+async fn non_active_user_unauthorized() {
+    let app = spawn_web_app().await;
+    let data = LoginData {
+        email_address: app
+            .test_users
+            .non_active_user
+            .email_address()
+            .value()
+            .to_owned(),
+        password: app.test_users.non_active_user_password.clone(),
+    };
+    let response = app.call_login_api(&data).await;
 
-// TODO; Eメールアドレスとパスワードが一致して、アクティブなユーザーが認証されることを確認するテスト
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+}
+
+// TODO; Eメールアドレスとパスワードが正しくて、アクティブなユーザーが認証されることを確認するテスト
