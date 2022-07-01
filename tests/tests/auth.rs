@@ -2,6 +2,8 @@ extern crate web_server;
 
 use configurations::{SessionCookieSettings, Settings};
 use cookie_store::{Cookie, CookieExpiration};
+// use redis::Commands;
+// use secrecy::ExposeSecret;
 
 use crate::helpers::{spawn_web_app, LoginData};
 
@@ -65,6 +67,11 @@ fn assert_cookie(cookie: &Cookie, settings: &SessionCookieSettings) {
 #[ignore]
 async fn active_user_authorized() {
     let app = spawn_web_app().await;
+    let Settings {
+        ref session_cookie,
+        // ref session_store,
+        ..
+    } = app.settings;
     let user = &app.test_users.active_user;
     let data = LoginData {
         email_address: user.email_address().value().to_owned(),
@@ -89,10 +96,7 @@ async fn active_user_authorized() {
     assert!(result.last_logged_in.is_some());
 
     // クッキーにセッションデータが記録されているか確認
-    let session_id = {
-        let Settings {
-            ref session_cookie, ..
-        } = app.settings;
+    let _session_id = {
         let store = app.cookie_store.lock().unwrap();
         // セッションID
         let session_id_cookie = store.get("localhost", "/", &session_cookie.session_id_cookie_name);
@@ -113,5 +117,14 @@ async fn active_user_authorized() {
         session_id_cookie.unwrap().value().to_owned()
     };
 
-    // TODO: Redisにセッションデータが記録されているか確認
+    // FIXME: Redisにセッションデータが記録されているか確認
+    // actix-sessionは、ソースコードを確認した結果、ブラウザに暗号化したセッションIDをクッキーとして保存するように指示しているように見える。
+    // 暗号化する際に使用するキーは、おそらくセッションミドルウェアを構築するときに指定しており、本プログラムでは環境変数SESSION_STORE_KEY
+    // 及び`settings.session_store.keyが該当するのではないか。
+    // 暗号化したセッションIDを複合する方法を把握した後に、本テストを実装すること。
+    // let client = redis::Client::open(session_store.uri.expose_secret().as_str()).unwrap();
+    // let mut conn = client.get_connection().unwrap();
+    // 下の行で、セッションデータの取得を試みるが、Redisはnilを返却する。
+    // let _session_data: String = conn.get(session_id).unwrap();
+    // actix-sessionがクッキーに保存するように指示したセッションIDの値は、Redisに登録されているキーとは一致していないことを確認した。
 }
