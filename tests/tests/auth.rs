@@ -60,7 +60,19 @@ async fn active_user_authorized() {
     // 200 OKが返却されるか確認
     assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-    // TODO: 最終更新日時が更新されているか確認
+    // 最終ログイン日時が更新されているか確認
+    let result = sqlx::query!(
+        r#"
+            SELECT last_logged_in
+            FROM users
+            WHERE id = $1
+        "#,
+        user.id().value(),
+    )
+    .fetch_one(&app.pool)
+    .await
+    .expect("データベースからユーザーを取得できませんでした。");
+    assert!(result.last_logged_in.is_some());
 
     // TODO: クッキーにセッションデータが記録されているか確認
 
