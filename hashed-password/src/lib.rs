@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use std::time::SystemTime;
 
 use anyhow::{anyhow, Context};
 use argon2::password_hash::SaltString;
@@ -67,18 +66,6 @@ pub fn verify_password(
         .verify_password(raw_password.expose_secret().as_bytes(), &expected_hashed)
         .context("Invalid password.")
         .map_err(AuthError::InvalidCredentials)
-}
-
-/// 現在日時をUNIXエポック秒で取得する。
-///
-/// # Returns
-///
-/// 現在日時を示すUNIXエポック秒。
-pub fn current_unix_epoch() -> u64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
 }
 
 /// 有効期限の開始を指定したJWTを生成する。
@@ -171,6 +158,7 @@ pub fn get_claim_from_jwt(token: &str, secret_key: &Secret<String>) -> anyhow::R
 #[cfg(test)]
 mod tests {
     use super::*;
+    use miscellaneous::current_unix_epoch;
     use uuid::Uuid;
 
     /// パスワードを正常にハッシュ化できることを確認するテスト

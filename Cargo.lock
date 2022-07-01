@@ -1311,6 +1311,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "miscellaneous"
+version = "0.1.0"
+
+[[package]]
 name = "native-tls"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2500,6 +2504,7 @@ dependencies = [
  "domains",
  "hashed-password",
  "infrastructures",
+ "miscellaneous",
  "secrecy",
  "serde",
  "serde_json",

@@ -12,7 +12,8 @@ use domains::models::{
     users::{User, UserId},
     EmailAddress,
 };
-use hashed_password::{current_unix_epoch, generate_jwt_pair, verify_password};
+use hashed_password::{generate_jwt_pair, verify_password};
+use miscellaneous::current_unix_epoch;
 
 #[derive(Debug, thiserror::Error)]
 pub enum LoginError {

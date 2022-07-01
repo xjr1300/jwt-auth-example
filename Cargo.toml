@@ -4,6 +4,7 @@ members = [
     "domains",
     "hashed-password",
     "infrastructures",
+    "miscellaneous",
     "routes",
     "tests",
     "usecases",
