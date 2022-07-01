@@ -2164,6 +2164,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "configurations",
+ "cookie_store",
  "domains",
  "dotenvy",
  "once_cell",

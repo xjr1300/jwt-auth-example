@@ -1,5 +1,8 @@
 extern crate web_server;
 
+use configurations::{SessionCookieSettings, Settings};
+use cookie_store::{Cookie, CookieExpiration};
+
 use crate::helpers::{spawn_web_app, LoginData};
 
 /// 登録されていないユーザーが認証されないことを確認するテスト
@@ -46,6 +49,17 @@ async fn non_active_user_unauthorized() {
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }
 
+fn assert_cookie(cookie: &Cookie, settings: &SessionCookieSettings) {
+    assert!(cookie.http_only().unwrap());
+    if !cookie.secure().is_none() {
+        assert_eq!(cookie.secure().unwrap(), settings.secure);
+    } else {
+        assert!(!settings.secure);
+    }
+    assert_eq!(cookie.same_site().unwrap(), settings.same_site);
+    assert_eq!(cookie.expires, CookieExpiration::SessionEnd);
+}
+
 // TODO; Eメールアドレスとパスワードが正しくて、アクティブなユーザーが認証されることを確認するテスト
 #[tokio::test]
 #[ignore]
@@ -74,7 +88,27 @@ async fn active_user_authorized() {
     .expect("データベースからユーザーを取得できませんでした。");
     assert!(result.last_logged_in.is_some());
 
-    // TODO: クッキーにセッションデータが記録されているか確認
+    // クッキーにセッションデータが記録されているか確認
+    {
+        let Settings {
+            ref session_cookie, ..
+        } = app.settings;
+        let store = app.cookie_store.lock().unwrap();
+        let cookie_names = vec![
+            session_cookie.session_id_cookie_name.as_str(),
+            "access_token",
+            "refresh_token",
+        ];
+        for cookie_name in cookie_names {
+            let cookie = store.get("localhost", "/", cookie_name);
+            assert!(
+                cookie.is_some(),
+                "クッキー{}が記録されていません。",
+                cookie_name
+            );
+            assert_cookie(cookie.unwrap(), session_cookie);
+        }
+    }
 
     // TODO: Redisにセッションデータが記録されているか確認
 }

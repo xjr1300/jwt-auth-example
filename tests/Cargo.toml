@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = "1.0"
 actix-web = "4.1"
 configurations = { path = "../configurations" }
+cookie_store = "0.16"
 domains = { path = "../domains" }
 dotenvy = "0.15"
 once_cell = "1.12"

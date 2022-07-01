@@ -99,8 +99,8 @@ pub async fn spawn_web_app() -> TestWebApp {
     let api_client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
         .cookie_provider(Arc::clone(&cookie_store))
-        // requestのクッキーストアを無効にしないと、reqwest_cookie_storeが有効にならない
-        .cookie_store(false)
+        // .cookie_storeメソッドを使用すると、reqwest_cookie_storeが有効にならない
+        // .cookie_store(false)
         .build()
         .unwrap();
 
