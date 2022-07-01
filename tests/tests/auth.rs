@@ -89,16 +89,17 @@ async fn active_user_authorized() {
     assert!(result.last_logged_in.is_some());
 
     // クッキーにセッションデータが記録されているか確認
-    {
+    let session_id = {
         let Settings {
             ref session_cookie, ..
         } = app.settings;
         let store = app.cookie_store.lock().unwrap();
-        let cookie_names = vec![
-            session_cookie.session_id_cookie_name.as_str(),
-            "access_token",
-            "refresh_token",
-        ];
+        // セッションID
+        let session_id_cookie = store.get("localhost", "/", &session_cookie.session_id_cookie_name);
+        assert_cookie(session_id_cookie.unwrap(), session_cookie);
+
+        // トークン
+        let cookie_names = vec!["access_token", "refresh_token"];
         for cookie_name in cookie_names {
             let cookie = store.get("localhost", "/", cookie_name);
             assert!(
@@ -108,7 +109,9 @@ async fn active_user_authorized() {
             );
             assert_cookie(cookie.unwrap(), session_cookie);
         }
-    }
+
+        session_id_cookie.unwrap().value().to_owned()
+    };
 
     // TODO: Redisにセッションデータが記録されているか確認
 }
