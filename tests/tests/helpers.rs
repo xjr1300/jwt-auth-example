@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use dotenvy::dotenv;
 use once_cell::sync::Lazy;
+use reqwest_cookie_store::CookieStoreMutex;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPool, Connection, Executor, PgConnection};
 use uuid::Uuid;
@@ -37,6 +40,7 @@ pub struct TestWebApp {
     pub port: u16,
     pub pool: PgPool,
     pub api_client: reqwest::Client,
+    pub cookie_store: Arc<CookieStoreMutex>,
     pub test_users: TestUsers,
 }
 
@@ -60,6 +64,10 @@ impl TestWebApp {
             .await
             .expect("ログインAPIにアクセスできませんでした。")
     }
+}
+
+fn get_cookie_store() -> Arc<CookieStoreMutex> {
+    Arc::new(CookieStoreMutex::default())
 }
 
 /// テスト用Webアプリを生成する。
@@ -86,9 +94,12 @@ pub async fn spawn_web_app() -> TestWebApp {
     let _ = tokio::spawn(web_app.run_until_stopped());
 
     // APIクライアントを構築
+    let cookie_store = get_cookie_store();
     let api_client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
-        .cookie_store(true)
+        .cookie_provider(Arc::clone(&cookie_store))
+        // requestのクッキーストアを無効にしないと、reqwest_cookie_storeが有効にならない
+        .cookie_store(false)
         .build()
         .unwrap();
 
@@ -97,6 +108,7 @@ pub async fn spawn_web_app() -> TestWebApp {
         port,
         pool: get_connection_pool(&settings.db),
         api_client,
+        cookie_store: cookie_store.clone(),
         test_users: TestUsers::default(),
     };
 
