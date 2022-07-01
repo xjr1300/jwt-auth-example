@@ -108,7 +108,7 @@ async fn active_user_authorized() {
             let cookie = store.get("localhost", "/", cookie_name);
             assert!(
                 cookie.is_some(),
-                "クッキー{}が記録されていません。",
+                "クッキーに{}が記録されていません。",
                 cookie_name
             );
             assert_cookie(cookie.unwrap(), session_cookie);
@@ -126,5 +126,5 @@ async fn active_user_authorized() {
     // let mut conn = client.get_connection().unwrap();
     // 下の行で、セッションデータの取得を試みるが、Redisはnilを返却する。
     // let _session_data: String = conn.get(session_id).unwrap();
-    // actix-sessionがクッキーに保存するように指示したセッションIDの値は、Redisに登録されているキーとは一致していないことを確認した。
+    // actix-sessionがクッキーに保存するように指示したセッションIDの値は、Redisに登録されているキーとは一致しないことを確認した。
 }
