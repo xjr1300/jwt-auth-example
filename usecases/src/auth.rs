@@ -4,7 +4,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use configurations::{
-    password::verify_password,
+    password::{verify_password, AuthError},
     session::{SessionData, TypedSession},
     telemetries::spawn_blocking_with_tracing,
     tokens::generate_jwt_pair,
@@ -60,7 +60,10 @@ async fn validate_credentials(
             .await
             .map_err(|e| LoginError::UnexpectedError(e.into()))?;
     if let Err(e) = result {
-        return Err(LoginError::UnexpectedError(e.into()));
+        return Err(match e {
+            AuthError::InvalidCredentials(_) => LoginError::InvalidCredentials,
+            AuthError::UnexpectedError(e) => LoginError::UnexpectedError(e),
+        });
     }
 
     Ok(user)
