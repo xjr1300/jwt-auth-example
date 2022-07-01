@@ -2,7 +2,6 @@
 members = [
     "configurations",
     "domains",
-    "hashed-password",
     "infrastructures",
     "miscellaneous",
     "routes",

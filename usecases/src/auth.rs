@@ -3,6 +3,7 @@ use secrecy::Secret;
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
+use configurations::hashed_password::{generate_jwt_pair, verify_password};
 use configurations::{
     session::{SessionData, TypedSession},
     telemetries::spawn_blocking_with_tracing,
@@ -12,7 +13,6 @@ use domains::models::{
     users::{User, UserId},
     EmailAddress,
 };
-use hashed_password::{generate_jwt_pair, verify_password};
 use miscellaneous::current_unix_epoch;
 
 #[derive(Debug, thiserror::Error)]

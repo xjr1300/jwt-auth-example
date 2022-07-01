@@ -7,7 +7,6 @@ edition = "2021"
 anyhow = "1.0"
 configurations = { path = "../configurations" }
 domains = { path = "../domains" }
-hashed-password = { path = "../hashed-password" }
 infrastructures = { path = "../infrastructures" }
 miscellaneous = { path = "../miscellaneous" }
 secrecy = { version = "0.8", features = ["serde"] }
