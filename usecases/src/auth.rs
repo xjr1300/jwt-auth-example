@@ -3,10 +3,11 @@ use secrecy::Secret;
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
-use configurations::hashed_password::{generate_jwt_pair, verify_password};
 use configurations::{
+    password::verify_password,
     session::{SessionData, TypedSession},
     telemetries::spawn_blocking_with_tracing,
+    tokens::generate_jwt_pair,
     Settings, TokensSettings,
 };
 use domains::models::{

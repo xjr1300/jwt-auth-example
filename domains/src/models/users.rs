@@ -3,7 +3,7 @@ use secrecy::Secret;
 use time::OffsetDateTime;
 use validator::Validate;
 
-use configurations::hashed_password::compute_hashed_password;
+use configurations::password::compute_hashed_password;
 
 use crate::models::base::{EmailAddress, EntityId};
 
