@@ -7,6 +7,8 @@ use configurations::telemetries::{get_subscriber, init_subscriber};
 use configurations::{DatabaseSettings, Settings};
 use web_server::startup::{get_connection_pool, WebApp};
 
+use crate::users::TestUsers;
+
 /// 環境変数にTEST_LOGがあった場合、トレースを標準出力に出力して、std::io::Sinkに出力する。
 /// std::io::sinkは、すべてのデータを消費するライターインスタンスを構築する関数である。
 static TRACING: Lazy<()> = Lazy::new(|| {
@@ -27,6 +29,7 @@ pub struct TestWebApp {
     pub port: u16,
     pub pool: PgPool,
     pub api_client: reqwest::Client,
+    pub test_users: TestUsers,
 }
 
 /// テスト用Webアプリを生成する。
@@ -64,6 +67,7 @@ pub async fn spawn_web_app() -> TestWebApp {
         port,
         pool: get_connection_pool(&settings.db),
         api_client,
+        test_users: TestUsers::default(),
     };
 
     web_app

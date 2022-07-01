@@ -1,12 +1,12 @@
 extern crate web_server;
 
-mod test_helpers;
+use crate::helpers::spawn_web_app;
 
 /// ヘルスチェックが正常に動作するか確認するテスト
 #[tokio::test]
 #[ignore]
 async fn test_health_check() {
-    let app = test_helpers::spawn_web_app().await;
+    let app = spawn_web_app().await;
     let client = reqwest::Client::new();
     let response = client
         .get(&format!("{}/health_check", app.web_app_address))

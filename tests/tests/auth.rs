@@ -2,7 +2,7 @@ extern crate web_server;
 
 use serde::{Deserialize, Serialize};
 
-mod test_helpers;
+use crate::helpers::spawn_web_app;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +15,7 @@ struct LoginData {
 #[tokio::test]
 #[ignore]
 async fn test_anonymous_user_unauthorized() {
-    let app = test_helpers::spawn_web_app().await;
+    let app = spawn_web_app().await;
     let data = LoginData {
         email_address: "anonymous@example.com".to_owned(),
         password: "anonymous-password".to_owned(),
