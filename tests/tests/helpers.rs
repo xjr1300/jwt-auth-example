@@ -70,6 +70,9 @@ pub async fn spawn_web_app() -> TestWebApp {
         test_users: TestUsers::default(),
     };
 
+    // テストユーザーを登録
+    web_app.test_users.store(&web_app.pool).await;
+
     web_app
 }
 
