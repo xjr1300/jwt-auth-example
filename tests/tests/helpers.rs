@@ -55,6 +55,16 @@ impl TestWebApp {
             .expect("ヘルスチェックAPIにアクセスできませんでした。")
     }
 
+    /// サインアップAPIを呼び出す。
+    pub async fn call_signup_api(&self) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/accounts/signup", self.web_app_address))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .send()
+            .await
+            .expect("サインアップAPIにアクセスできませんでした。")
+    }
+
     /// ログインAPIを呼び出す。
     pub async fn call_login_api(&self, data: &LoginData) -> reqwest::Response {
         self.api_client

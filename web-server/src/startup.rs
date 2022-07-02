@@ -63,7 +63,11 @@ impl WebApp {
                 .app_data(settings.clone())
                 .app_data(pool.clone())
                 .route("/health_check", web::get().to(health_check::health_check))
-                .service(web::scope("/accounts").route("/login", web::post().to(accounts::login)))
+                .service(
+                    web::scope("/accounts")
+                        .service(web::resource("/signup").route(web::post().to(accounts::signup)))
+                        .service(web::resource("/login").route(web::post().to(accounts::login))),
+                )
         })
         .listen(listener)?
         .run();

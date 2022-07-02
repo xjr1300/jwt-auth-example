@@ -7,6 +7,15 @@ use cookie_store::{Cookie, CookieExpiration};
 
 use crate::helpers::{spawn_web_app, LoginData};
 
+/// [temporary] サインアップAPIにアクセスできることを確認するテスト
+#[tokio::test]
+#[ignore]
+async fn signup() {
+    let app = spawn_web_app().await;
+    let response = app.call_signup_api().await;
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+}
+
 /// 登録されていないユーザーが認証されないことを確認するテスト
 #[tokio::test]
 #[ignore]

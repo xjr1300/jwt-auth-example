@@ -12,6 +12,11 @@ use usecases::accounts::{self, LoginError};
 
 use crate::responses::e400;
 
+#[tracing::instrument(skip(_pool), name = "Signup")]
+pub async fn signup(_pool: web::Data<PgPool>) -> Result<HttpResponse, actix_web::Error> {
+    Ok(HttpResponse::Ok().finish())
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginData {
