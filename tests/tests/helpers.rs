@@ -29,6 +29,14 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SignupData {
+    pub user_name: String,
+    pub email_address: String,
+    pub password: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginData {
     pub email_address: String,
     pub password: String,
@@ -56,10 +64,11 @@ impl TestWebApp {
     }
 
     /// サインアップAPIを呼び出す。
-    pub async fn call_signup_api(&self) -> reqwest::Response {
+    pub async fn call_signup_api(&self, data: &SignupData) -> reqwest::Response {
         self.api_client
             .post(&format!("{}/accounts/signup", self.web_app_address))
             .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .json(&data)
             .send()
             .await
             .expect("サインアップAPIにアクセスできませんでした。")
