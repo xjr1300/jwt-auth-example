@@ -62,7 +62,7 @@ fn assert_cookie(cookie: &Cookie, settings: &SessionCookieSettings) {
     assert_eq!(cookie.expires, CookieExpiration::SessionEnd);
 }
 
-// TODO; Eメールアドレスとパスワードが正しくて、アクティブなユーザーが認証されることを確認するテスト
+// Eメールアドレスとパスワードが正しくて、アクティブなユーザーが認証されることを確認するテスト
 #[tokio::test]
 #[ignore]
 async fn active_user_authorized() {
