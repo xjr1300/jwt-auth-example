@@ -1,6 +1,8 @@
 use infrastructures::repositories::users::PgUserRepository;
 use secrecy::Secret;
+use serde::Serialize;
 use sqlx::{PgPool, Postgres, Transaction};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 use configurations::{
@@ -11,7 +13,7 @@ use configurations::{
     Settings, TokensSettings,
 };
 use domains::models::{
-    users::{RawPassword, User, UserId, UserName},
+    users::{HashedPassword, RawPassword, User, UserId, UserName},
     EmailAddress,
 };
 use miscellaneous::current_unix_epoch;
@@ -20,15 +22,68 @@ use miscellaneous::current_unix_epoch;
 pub enum SignupError {
     #[error(transparent)]
     UnexpectedError(anyhow::Error),
+    #[error("Eメールアドレスが既に登録されています。")]
+    EmailAddressAlreadyExists,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SignupResult {
+    pub id: Uuid,
+    pub user_name: String,
+    pub email_address: String,
+    pub is_active: bool,
+    pub created_at: OffsetDateTime,
+    pub updated_at: OffsetDateTime,
 }
 
 pub async fn signup(
-    _user_name: UserName,
-    _email_address: EmailAddress,
-    _password: RawPassword,
-    _pool: &PgPool,
-) -> anyhow::Result<(), SignupError> {
-    Ok(())
+    user_name: UserName,
+    email_address: EmailAddress,
+    password: RawPassword,
+    pool: &PgPool,
+) -> anyhow::Result<SignupResult, SignupError> {
+    // トランザクションを開始
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| SignupError::UnexpectedError(e.into()))?;
+    // リポジトリを構築
+    let repository = PgUserRepository::default();
+
+    // メールアドレスが一致するユーザーが存在しないか確認
+    let found = repository
+        .get_by_email_address(&email_address, &mut tx)
+        .await
+        .map_err(|e| SignupError::UnexpectedError(e.into()))?;
+    if found.is_some() {
+        return Err(SignupError::EmailAddressAlreadyExists);
+    }
+
+    // ユーザーを登録
+    let hashed_password = HashedPassword::new(&password).map_err(SignupError::UnexpectedError)?;
+    let user = User::new(
+        UserId::default(),
+        user_name,
+        email_address,
+        hashed_password,
+        true,
+        None,
+        None,
+        None,
+    );
+    let user = repository
+        .insert(&user, &mut tx)
+        .await
+        .map_err(|e| SignupError::UnexpectedError(e.into()))?;
+
+    Ok(SignupResult {
+        id: user.id().value().to_owned(),
+        user_name: user.user_name().value().to_owned(),
+        email_address: user.email_address().value().to_owned(),
+        is_active: user.is_active(),
+        created_at: user.created_at().unwrap(),
+        updated_at: user.updated_at().unwrap(),
+    })
 }
 
 #[derive(Debug, thiserror::Error)]

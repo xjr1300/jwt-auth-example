@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{http::header::ContentType, web, HttpResponse};
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -11,7 +11,7 @@ use domains::models::{
     users::{RawPassword, UserName},
     EmailAddress,
 };
-use usecases::accounts::{self, LoginError};
+use usecases::accounts::{self, LoginError, SignupError};
 
 use crate::responses::e400;
 
@@ -31,11 +31,19 @@ pub async fn signup(
     let user_name = UserName::new(&data.user_name).map_err(e400)?;
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
     let password = RawPassword::new(data.password.expose_secret()).map_err(e400)?;
-    let _ = accounts::signup(user_name, email_address, password, &pool).await;
+    let user = accounts::signup(user_name, email_address, password, &pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("{:?}", e);
+            match e {
+                SignupError::EmailAddressAlreadyExists => actix_web::error::ErrorBadRequest(e),
+                SignupError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
+            }
+        })?;
 
-    // TODO: ユースケースの処理結果を処理
-
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .json(user))
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,13 +70,11 @@ pub async fn login(
     )
     .await
     .map_err(|e| {
-        // トレースログを出力
-        tracing::error!("{}", e);
-        // エラー内容に合わせてレスポンスを返却
+        tracing::error!("{:?}", e);
         match e {
+            LoginError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
             LoginError::InvalidCredentials => actix_web::error::ErrorUnauthorized(e),
             LoginError::NotActive(_) => actix_web::error::ErrorUnauthorized(e),
-            LoginError::UnexpectedError(_) => actix_web::error::ErrorInternalServerError(e),
         }
     })?;
 

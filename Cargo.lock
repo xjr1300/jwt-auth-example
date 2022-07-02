@@ -2174,6 +2174,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "time",
  "tokio",
  "tracing-subscriber",
  "uuid",
@@ -2518,6 +2519,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "thiserror",
+ "time",
  "tracing",
  "uuid",
 ]
