@@ -5,7 +5,7 @@ use actix_web::{cookie::Key, dev::Server, web, App, HttpServer};
 use secrecy::ExposeSecret;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use routes::{auth, health_check};
+use routes::{accounts, health_check};
 
 use configurations::{DatabaseSettings, Settings};
 
@@ -63,7 +63,7 @@ impl WebApp {
                 .app_data(settings.clone())
                 .app_data(pool.clone())
                 .route("/health_check", web::get().to(health_check::health_check))
-                .service(web::scope("/auth").route("/login", web::post().to(auth::login)))
+                .service(web::scope("/accounts").route("/login", web::post().to(accounts::login)))
         })
         .listen(listener)?
         .run();

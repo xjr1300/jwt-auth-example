@@ -58,7 +58,7 @@ impl TestWebApp {
     /// ログインAPIを呼び出す。
     pub async fn call_login_api(&self, data: &LoginData) -> reqwest::Response {
         self.api_client
-            .post(&format!("{}/auth/login", self.web_app_address))
+            .post(&format!("{}/accounts/login", self.web_app_address))
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .json(&data)
             .send()

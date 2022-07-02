@@ -8,7 +8,7 @@ use configurations::{
     Settings,
 };
 use domains::models::EmailAddress;
-use usecases::auth::{self, LoginError};
+use usecases::accounts::{self, LoginError};
 
 use crate::responses::e400;
 
@@ -27,7 +27,7 @@ pub async fn login(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
-    let session_data = auth::login(
+    let session_data = accounts::login(
         email_address,
         data.password.clone(),
         settings.as_ref(),
