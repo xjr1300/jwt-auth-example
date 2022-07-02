@@ -1,4 +1,3 @@
-use infrastructures::repositories::users::PgUserRepository;
 use secrecy::Secret;
 use serde::Serialize;
 use sqlx::{PgPool, Postgres, Transaction};
@@ -16,6 +15,7 @@ use domains::models::{
     users::{HashedPassword, RawPassword, User, UserId, UserName},
     EmailAddress,
 };
+use infrastructures::repositories::users::PgUserRepository;
 use miscellaneous::current_unix_epoch;
 
 #[derive(Debug, thiserror::Error)]
@@ -73,6 +73,11 @@ pub async fn signup(
     );
     let user = repository
         .insert(&user, &mut tx)
+        .await
+        .map_err(|e| SignupError::UnexpectedError(e.into()))?;
+
+    // トランザクションをコミット
+    tx.commit()
         .await
         .map_err(|e| SignupError::UnexpectedError(e.into()))?;
 
