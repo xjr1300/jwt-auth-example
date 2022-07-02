@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse};
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -7,7 +7,10 @@ use configurations::{
     session::{add_session_data_cookies, TypedSession},
     Settings,
 };
-use domains::models::EmailAddress;
+use domains::models::{
+    users::{RawPassword, UserName},
+    EmailAddress,
+};
 use usecases::accounts::{self, LoginError};
 
 use crate::responses::e400;
@@ -20,11 +23,18 @@ pub struct SignupData {
     pub password: Secret<String>,
 }
 
-#[tracing::instrument(skip(_pool), name = "Signup")]
+#[tracing::instrument(skip(pool), name = "Signup")]
 pub async fn signup(
-    _data: web::Json<SignupData>,
-    _pool: web::Data<PgPool>,
+    data: web::Json<SignupData>,
+    pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
+    let user_name = UserName::new(&data.user_name).map_err(e400)?;
+    let email_address = EmailAddress::new(&data.email_address).map_err(e400)?;
+    let password = RawPassword::new(data.password.expose_secret()).map_err(e400)?;
+    let _ = accounts::signup(user_name, email_address, password, &pool).await;
+
+    // TODO: ユースケースの処理結果を処理
+
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -48,7 +58,7 @@ pub async fn login(
         data.password.clone(),
         settings.as_ref(),
         &session,
-        pool.as_ref(),
+        &pool,
     )
     .await
     .map_err(|e| {

@@ -11,10 +11,25 @@ use configurations::{
     Settings, TokensSettings,
 };
 use domains::models::{
-    users::{User, UserId},
+    users::{RawPassword, User, UserId, UserName},
     EmailAddress,
 };
 use miscellaneous::current_unix_epoch;
+
+#[derive(Debug, thiserror::Error)]
+pub enum SignupError {
+    #[error(transparent)]
+    UnexpectedError(anyhow::Error),
+}
+
+pub async fn signup(
+    _user_name: UserName,
+    _email_address: EmailAddress,
+    _password: RawPassword,
+    _pool: &PgPool,
+) -> anyhow::Result<(), SignupError> {
+    Ok(())
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum LoginError {
