@@ -28,7 +28,7 @@ pub struct SessionData {
 /// 型付けセッション構造体
 ///
 /// RedisにセッションIDをキーにアクセストークンを記録する。
-pub struct TypedSession(Session);
+pub struct TypedSession(pub Session);
 
 impl TypedSession {
     const SESSION_DATA_KEY: &'static str = "session_data";

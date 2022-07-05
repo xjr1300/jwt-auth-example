@@ -1273,7 +1273,10 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 name = "middlewares"
 version = "0.1.0"
 dependencies = [
+ "actix-session",
  "actix-web",
+ "configurations",
+ "futures-util",
  "tracing",
 ]
 
