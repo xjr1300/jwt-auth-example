@@ -3,6 +3,7 @@ members = [
     "configurations",
     "domains",
     "infrastructures",
+    "middlewares",
     "miscellaneous",
     "routes",
     "tests",
