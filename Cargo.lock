@@ -2692,6 +2692,7 @@ dependencies = [
  "anyhow",
  "configurations",
  "dotenvy",
+ "middlewares",
  "once_cell",
  "routes",
  "secrecy",

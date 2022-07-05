@@ -2,10 +2,11 @@ use std::net::TcpListener;
 
 use actix_session::{storage::RedisSessionStore, SessionLength, SessionMiddleware};
 use actix_web::{cookie::Key, dev::Server, web, App, HttpServer};
+use middlewares::JwtAuth;
 use secrecy::ExposeSecret;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use routes::{accounts, health_check};
+use routes::{accounts, health_check, protected_resource};
 
 use configurations::{DatabaseSettings, Settings};
 
@@ -68,6 +69,10 @@ impl WebApp {
                         .service(web::resource("/signup").route(web::post().to(accounts::signup)))
                         .service(web::resource("/login").route(web::post().to(accounts::login))),
                 )
+                .service(web::scope("").wrap(JwtAuth).route(
+                    "/protected_resource",
+                    web::get().to(protected_resource::sample_protected_resource),
+                ))
         })
         .listen(listener)?
         .run();

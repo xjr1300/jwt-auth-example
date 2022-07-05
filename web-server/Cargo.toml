@@ -9,6 +9,7 @@ actix-web = "4.1"
 anyhow = "1.0"
 configurations = { path = "../configurations" }
 dotenvy = "0.15"
+middlewares = { path = "../middlewares" }
 once_cell = "1.12"
 routes = { path = "../routes" }
 secrecy = "0.8.0"
