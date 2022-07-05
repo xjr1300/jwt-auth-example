@@ -71,7 +71,7 @@ impl<S: Service<Req>, Req> Service<Req> for JwtAuthMiddleware<S> {
     forward_ready!(service);
 
     fn call(&self, req: Req) -> Self::Future {
-        println!("JwtAuthMiddleware called!");
+        tracing::info!("JwtAuthMiddleware called!");
         self.service.call(req)
     }
 }
