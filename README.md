@@ -1,5 +1,6 @@
 # jwt-auth-example
 
+- [Zero To Production In Rust](https://www.zero2prod.com/index.html)に感謝
 - JWTトークンでユーザーを認証することを試行したサンプルアプリケーション
 - クッキーでトークンを送受信するため、HTTPSで運用することを前提
 
@@ -125,4 +126,12 @@ cargo test
 
 ```bash
 cargo test -- --ignored
+```
+
+### パッケージの単体テスト
+
+パッケージの単体テストは以下の通り実行する。
+
+```bash
+cargo test --package <package-name>
 ```
