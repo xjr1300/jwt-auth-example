@@ -84,6 +84,15 @@ impl TestWebApp {
             .await
             .expect("ログインAPIにアクセスできませんでした。")
     }
+
+    /// 保護リソース取得APIを呼び出す。
+    pub async fn call_protected_api(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/protected_resource", self.web_app_address))
+            .send()
+            .await
+            .expect("保護リソース取得APIにアクセスできませんでした。")
+    }
 }
 
 fn get_cookie_store() -> Arc<CookieStoreMutex> {
