@@ -8,3 +8,9 @@ actix-web = "4.1"
 actix-session = { version = "0.6", features = ["redis-rs-tls-session"] }
 configurations = { path = "../configurations" }
 tracing = "0.1"
+
+
+[dependencies.sqlx]
+version = "0.6"
+default-features = false
+features = ["runtime-tokio-rustls", "macros", "postgres", "uuid", "time"]

@@ -1276,6 +1276,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "configurations",
+ "sqlx",
  "tracing",
 ]
 
