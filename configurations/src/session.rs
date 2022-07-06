@@ -100,6 +100,20 @@ impl FromRequest for TypedSession {
     }
 }
 
+/// クッキーを構築する。
+/// 
+/// 構築するクッキーのSecure及びSameSiteは、システム設定による。
+/// また、クッキーのPathは`/`で、HttpOnlyである。
+/// 
+/// # Arguments
+/// 
+/// * `name` - クッキーの名前。
+/// * `value` - クッキーの値。
+/// * `settings` - システム設定のセッションクッキー設定。
+/// 
+/// # Returns
+/// 
+/// クッキー。
 pub fn build_session_data_cookie<'a>(
     name: &'a str,
     value: &'a str,
@@ -113,3 +127,9 @@ pub fn build_session_data_cookie<'a>(
         .finish()
         .into_owned()
 }
+
+// FIXME: トークンをクッキーに設定することを指示する実装を共通化したい。
+// 現在、routes.accounts.loginとmiddlewares.JwtAuthMiddlewareで
+// トークンをクッキーに設定するkとを指示しているが、一方が
+// `HttpResponse`で他方が`HttpResponse<B>`であり、それらを受け取る
+// 関数を定義する方法が不明なため、実装を共通化できていない。
