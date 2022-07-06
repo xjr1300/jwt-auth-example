@@ -18,3 +18,11 @@ async fn can_access_protected_resource() {
     assert_eq!(text, user.id().value().to_string());
 }
 
+// ログインしていないユーザーが、保護されたリソースにアクセスできないことを確認するテスト。
+#[tokio::test]
+#[ignore]
+async fn cannot_access_protected_resource() {
+    let app = spawn_web_app().await;
+    let response = app.call_protected_api().await;
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+}
