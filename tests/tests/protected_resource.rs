@@ -26,3 +26,9 @@ async fn cannot_access_protected_resource() {
     let response = app.call_protected_api().await;
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }
+
+// TODO: ログイン済みのユーザーが、アクセストークンの有効期限が切れていて、リフレッシュトークンが有効期限内の場合に、保護されたリソースにアクセスできることを確認するテストを実装
+// ブラウザにクッキーとして保存されたアクセストークンとリフレッシュトークンが、変更されていることを確認する。
+
+// TODO: ログイン済みのユーザーが、リフレッシュトークンの有効期限が切れていて、保護されたリソースにアクセスできないことを確認するテストを実装
+// ブラウザのセッションデータクッキーが削除されていることを確認する。
