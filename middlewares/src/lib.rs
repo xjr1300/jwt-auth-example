@@ -235,6 +235,8 @@ where
                 return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
             }
 
+            // TODO: リクエストにユーザーをデータとして追加
+
             // 後続のミドルウェアなどにリクエストの処理を移譲
             let future = service.call(service_req);
 
