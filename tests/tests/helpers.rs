@@ -100,8 +100,17 @@ fn get_cookie_store() -> Arc<CookieStoreMutex> {
 }
 
 /// テスト用Webアプリを生成する。
-pub async fn spawn_web_app() -> TestWebApp {
-    dotenv().ok();
+///
+/// `is_dotenv`を`false`にすることで、テストコードで`dotenv().ok()`を実行した後、環境変数を設定することで、
+/// システム設定をカスタマイズできる。
+///
+/// # Arguments
+///
+/// * `is_dotenv` - `true`の場合`dotenv().ok()`を実行して、`false`の場合は実行しない。
+pub async fn spawn_web_app(is_dotenv: bool) -> TestWebApp {
+    if is_dotenv {
+        dotenv().ok();
+    }
 
     Lazy::force(&TRACING);
 

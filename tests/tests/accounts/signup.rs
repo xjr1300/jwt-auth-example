@@ -35,7 +35,7 @@ async fn signup_fixed_user(app: &TestWebApp) -> reqwest::Response {
 #[tokio::test]
 #[ignore]
 async fn signup() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let response = signup_fixed_user(&app).await;
     assert_eq!(response.status(), reqwest::StatusCode::OK);
     let user: PartialUser = serde_json::from_value(response.json().await.unwrap()).unwrap();
@@ -51,7 +51,7 @@ async fn signup() {
 #[tokio::test]
 #[ignore]
 async fn cannot_signup_same_email_address() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     // 同じEメールアドレスを持つユーザーを2回登録
     let _ = signup_fixed_user(&app).await;
     let response = signup_fixed_user(&app).await;

@@ -4,7 +4,7 @@ use crate::helpers::{spawn_web_app, LoginData};
 #[tokio::test]
 #[ignore]
 async fn can_access_protected_resource() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let user = &app.test_users.active_user;
     let data = LoginData {
         email_address: user.email_address().value().to_owned(),
@@ -22,7 +22,7 @@ async fn can_access_protected_resource() {
 #[tokio::test]
 #[ignore]
 async fn cannot_access_protected_resource() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let response = app.call_protected_api().await;
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }

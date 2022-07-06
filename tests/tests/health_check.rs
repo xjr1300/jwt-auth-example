@@ -6,7 +6,7 @@ use crate::helpers::spawn_web_app;
 #[tokio::test]
 #[ignore]
 async fn health_check() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let response = app.call_health_check_api().await;
     assert!(
         response.status().is_success(),

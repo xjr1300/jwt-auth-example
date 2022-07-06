@@ -11,7 +11,7 @@ use crate::helpers::{spawn_web_app, LoginData};
 #[tokio::test]
 #[ignore]
 async fn anonymous_user_unauthorized() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let data = LoginData {
         email_address: "anonymous@example.com".to_owned(),
         password: "anonymous-password".to_owned(),
@@ -25,7 +25,7 @@ async fn anonymous_user_unauthorized() {
 #[tokio::test]
 #[ignore]
 async fn user_unauthorized_when_wrong_password() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let user = &app.test_users.active_user;
     let data = LoginData {
         email_address: user.email_address().value().to_owned(),
@@ -40,7 +40,7 @@ async fn user_unauthorized_when_wrong_password() {
 #[tokio::test]
 #[ignore]
 async fn non_active_user_unauthorized() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let user = &app.test_users.non_active_user;
     let data = LoginData {
         email_address: user.email_address().value().to_owned(),
@@ -66,7 +66,7 @@ fn assert_cookie(cookie: &Cookie, settings: &SessionCookieSettings) {
 #[tokio::test]
 #[ignore]
 async fn active_user_authorized() {
-    let app = spawn_web_app().await;
+    let app = spawn_web_app(true).await;
     let Settings {
         ref session_cookie,
         // ref session_store,
