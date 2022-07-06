@@ -41,7 +41,6 @@
 //! をキーに`セッションデータ`として保存する。
 //! また、ブラウザにセッションIDと、新しく生成したアクセストークンとリフレッシュトークンをクッキーに保存するように
 //! 指示する。
-
 use std::future::{ready, Future, Ready};
 use std::pin::Pin;
 use std::rc::Rc;
@@ -49,15 +48,13 @@ use std::rc::Rc;
 use actix_session::SessionExt;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::{web, HttpMessage};
+use configurations::session::{ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use configurations::{
     generate_session_data,
-    session::{
-        build_session_data_cookie, SessionData, TypedSession, ACCESS_TOKEN_COOKIE_NAME,
-        REFRESH_TOKEN_COOKIE_NAME,
-    },
+    session::{add_session_data_cookies, SessionData, TypedSession},
     Settings,
 };
 use domains::models::users::{User, UserId};
@@ -281,24 +278,18 @@ where
             // トークンを更新する必要がある場合は、トークンを更新してRedisに記録するとともに、
             // ブラウザにトークンをクッキーに記録するように指示
             if result == TokenValidation::RequiredRefresh {
-                let response = resp.response_mut();
                 // Redisにセッションデータを登録
                 session
                     .insert(&session_data)
                     .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
                 // ブラウザにトークンをクッキーに記録するように指示
-                let access_token_cookie = build_session_data_cookie(
-                    ACCESS_TOKEN_COOKIE_NAME,
+                let response = resp.response_mut();
+                add_session_data_cookies(
+                    response,
                     &session_data.access_token,
-                    &session_cookie,
-                );
-                let refresh_token_cookie = build_session_data_cookie(
-                    REFRESH_TOKEN_COOKIE_NAME,
                     &session_data.refresh_token,
                     &session_cookie,
                 );
-                response.add_cookie(&access_token_cookie).unwrap();
-                response.add_cookie(&refresh_token_cookie).unwrap();
             }
 
             tracing::info!("JwtAuthMiddlewareが応答を返しました。");

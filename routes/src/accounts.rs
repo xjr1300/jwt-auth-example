@@ -4,10 +4,7 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 use configurations::{
-    session::{
-        build_session_data_cookie, TypedSession, ACCESS_TOKEN_COOKIE_NAME,
-        REFRESH_TOKEN_COOKIE_NAME,
-    },
+    session::{add_session_data_cookies, TypedSession},
     Settings,
 };
 use domains::models::{
@@ -82,19 +79,13 @@ pub async fn login(
     })?;
 
     // セッションデータをクッキーに追加するように指示してレスポンスを返却
-    let access_token_cookie = build_session_data_cookie(
-        ACCESS_TOKEN_COOKIE_NAME,
-        &session_data.access_token,
-        &settings.as_ref().session_cookie,
-    );
-    let refresh_token_cookie = build_session_data_cookie(
-        REFRESH_TOKEN_COOKIE_NAME,
-        &session_data.refresh_token,
-        &settings.as_ref().session_cookie,
-    );
     let mut response = HttpResponse::Ok().finish();
-    response.add_cookie(&access_token_cookie).unwrap();
-    response.add_cookie(&refresh_token_cookie).unwrap();
+    add_session_data_cookies(
+        &mut response,
+        &session_data.access_token,
+        &session_data.refresh_token,
+        &settings.session_cookie,
+    );
 
     Ok(response)
 }

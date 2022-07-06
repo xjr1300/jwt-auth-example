@@ -1,7 +1,7 @@
 use std::future::{ready, Ready};
 
 use actix_session::{Session, SessionExt};
-use actix_web::{cookie::Cookie, dev::Payload, FromRequest, HttpRequest};
+use actix_web::{cookie::Cookie, dev::Payload, FromRequest, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -128,8 +128,25 @@ pub fn build_session_data_cookie<'a>(
         .into_owned()
 }
 
-// FIXME: トークンをクッキーに設定することを指示する実装を共通化したい。
-// 現在、routes.accounts.loginとmiddlewares.JwtAuthMiddlewareで
-// トークンをクッキーに設定するkとを指示しているが、一方が
-// `HttpResponse`で他方が`HttpResponse<B>`であり、それらを受け取る
-// 関数を定義する方法が不明なため、実装を共通化できていない。
+/// レスポンスにセッションデータ（トークン）をクッキーに保存するように指示する。
+///
+/// # Arguments
+///
+/// * `response` - HTTPレスポンス。
+/// * `access_token` - アクセストークン。
+/// * `refresh_token` - リフレッシュトークン。
+/// * `settings` - セッションクッキー設定。
+pub fn add_session_data_cookies(
+    response: &mut HttpResponse,
+    access_token: &str,
+    refresh_token: &str,
+    settings: &SessionCookieSettings,
+) {
+    let access_token_cookie =
+        build_session_data_cookie(ACCESS_TOKEN_COOKIE_NAME, access_token, settings);
+    let refresh_token_cookie =
+        build_session_data_cookie(REFRESH_TOKEN_COOKIE_NAME, refresh_token, settings);
+
+    response.add_cookie(&access_token_cookie).unwrap();
+    response.add_cookie(&refresh_token_cookie).unwrap();
+}
