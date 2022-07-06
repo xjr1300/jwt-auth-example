@@ -1,4 +1,6 @@
-use actix_web::HttpResponse;
+use actix_web::{web, HttpResponse};
+
+use domains::models::users::User;
 
 /// サンプル保護リソースハンドラ
 ///
@@ -6,6 +8,6 @@ use actix_web::HttpResponse;
 ///
 /// Httpレスポンス。
 #[tracing::instrument(name = "Sample protected resource")]
-pub async fn sample_protected_resource() -> HttpResponse {
-    HttpResponse::Ok().body("This is a protected resource!")
+pub async fn protected_resource(user: web::ReqData<User>) -> HttpResponse {
+    HttpResponse::Ok().body(user.id().value().to_string())
 }

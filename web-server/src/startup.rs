@@ -71,7 +71,7 @@ impl WebApp {
                 )
                 .service(web::scope("").wrap(JwtAuth).route(
                     "/protected_resource",
-                    web::get().to(protected_resource::sample_protected_resource),
+                    web::get().to(protected_resource::protected_resource),
                 ))
         })
         .listen(listener)?
