@@ -49,13 +49,17 @@ use std::rc::Rc;
 use actix_session::SessionExt;
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::HttpMessage;
 use actix_web::{body::MessageBody, web};
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use configurations::{
     session::{SessionData, TypedSession, ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME},
     Settings,
 };
+use domains::models::users::{User, UserId};
+use infrastructures::repositories::users::PgUserRepository;
 
 pub struct JwtAuth;
 
@@ -190,6 +194,25 @@ fn evaluate_session_data_and_tokens(
     }
 }
 
+async fn get_user(pool: &PgPool, user_id: Uuid) -> Result<User, actix_web::Error> {
+    let user_id = UserId::new(user_id);
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("{}", e)))?;
+    let user = PgUserRepository::default()
+        .get_by_id(user_id, &mut tx)
+        .await
+        .map_err(|e| actix_web::error::ErrorUnauthorized(format!("{}", e)))?;
+    if user.is_none() {
+        return Err(actix_web::error::ErrorUnauthorized(
+            "セッションデータに含まれているユーザーは存在しません。",
+        ));
+    }
+
+    Ok(user.unwrap())
+}
+
 // TODO: evaluate_session_data_and_tokens関数の単体テストの実装
 
 impl<S, B> Service<ServiceRequest> for JwtAuthMiddleware<S>
@@ -214,8 +237,8 @@ where
             let _settings = get_settings(&service_req)?;
             tracing::info!("システム設定: {:?}", _settings);
             // データベースコネクションプールを取得
-            let _pool = get_database_connection_pool(&service_req)?;
-            tracing::info!("データベースコネクションプール: {:?}", _pool);
+            let pool = get_database_connection_pool(&service_req)?;
+            tracing::info!("データベースコネクションプール: {:?}", pool);
             // セッションデータを取得
             let session_data = get_session_data(&service_req)?;
             tracing::info!("セッションデータ: {:?}", session_data);
@@ -235,7 +258,9 @@ where
                 return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
             }
 
-            // TODO: リクエストにユーザーをデータとして追加
+            // リクエストにユーザーをデータとして追加
+            let user = get_user(pool, session_data.user_id).await?;
+            service_req.extensions_mut().insert(user);
 
             // 後続のミドルウェアなどにリクエストの処理を移譲
             let future = service.call(service_req);

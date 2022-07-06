@@ -1276,8 +1276,11 @@ dependencies = [
  "actix-session",
  "actix-web",
  "configurations",
+ "domains",
+ "infrastructures",
  "sqlx",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
