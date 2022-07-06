@@ -1276,7 +1276,6 @@ dependencies = [
  "actix-session",
  "actix-web",
  "configurations",
- "futures-util",
  "tracing",
 ]
 

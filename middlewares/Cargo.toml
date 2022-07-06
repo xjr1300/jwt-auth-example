@@ -7,5 +7,4 @@ edition = "2021"
 actix-web = "4.1"
 actix-session = { version = "0.6", features = ["redis-rs-tls-session"] }
 configurations = { path = "../configurations" }
-futures-util = "0.3"
 tracing = "0.1"

@@ -98,7 +98,16 @@ where
         if let Err(e) = session_data {
             return Box::pin(ready(Err(actix_web::error::ErrorInternalServerError(e))));
         }
+        let session_data = session_data.unwrap();
         tracing::info!("SessionData: {:?}", session_data);
+
+        // セッションデータがない場合は、`401 Unauthorized`で応答
+        if session_data.is_none() {
+            return Box::pin(ready(Err(actix_web::error::ErrorUnauthorized(
+                "認証されていません。",
+            ))));
+        }
+        let _session_data = session_data.unwrap();
 
         // 後続のミドルウェアなどにリクエストの処理を移譲
         let future = self.service.call(service_request);
