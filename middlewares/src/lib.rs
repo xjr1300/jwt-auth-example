@@ -51,6 +51,8 @@ use actix_web::cookie::time::OffsetDateTime;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::HttpMessage;
 use actix_web::{body::MessageBody, web};
+use configurations::generate_session_data;
+use configurations::session::build_session_data_cookie;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -108,8 +110,7 @@ fn get_database_connection_pool(service_req: &ServiceRequest) -> Result<&PgPool,
     Ok(pool.unwrap().as_ref())
 }
 
-fn get_session_data(service_req: &ServiceRequest) -> Result<Option<SessionData>, actix_web::Error> {
-    let session = TypedSession(service_req.get_session());
+fn get_session_data(session: &TypedSession) -> Result<Option<SessionData>, actix_web::Error> {
     let session_data = session.get();
     if let Err(e) = session_data {
         return Err(actix_web::error::ErrorInternalServerError(e));
@@ -232,30 +233,41 @@ where
 
         let service = Rc::clone(&self.service);
 
+        #[allow(clippy::redundant_closure)]
         Box::pin(async move {
             // システム設定を取得
-            let _settings = get_settings(&service_req)?;
-            tracing::info!("システム設定: {:?}", _settings);
+            let settings = get_settings(&service_req)?;
+            let Settings {
+                tokens,
+                session_cookie,
+                ..
+            } = settings;
+            let session_cookie = session_cookie.to_owned();
+            tracing::info!("システム設定: {:?}", settings);
             // データベースコネクションプールを取得
             let pool = get_database_connection_pool(&service_req)?;
             tracing::info!("データベースコネクションプール: {:?}", pool);
             // セッションデータを取得
-            let session_data = get_session_data(&service_req)?;
-            tracing::info!("セッションデータ: {:?}", session_data);
-            // トークンを取得
-            let (access_token, refresh_token) = get_tokens(&service_req);
-
+            let session = TypedSession(service_req.get_session());
+            let session_data = get_session_data(&session)?;
             // セッションデータがない場合は、`401 Unauthorized`で応答
             if session_data.is_none() {
                 return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
             }
-            let session_data = session_data.unwrap();
-
+            let mut session_data = session_data.unwrap();
+            tracing::info!("セッションデータ: {:?}", session_data);
+            // トークンを取得
+            let (access_token, refresh_token) = get_tokens(&service_req);
             // Redisに格納されているセッションデータと、クッキーに記録されていたトークンを評価
             let result =
                 evaluate_session_data_and_tokens(&session_data, &access_token, &refresh_token);
             if result == TokenValidation::Failure {
                 return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
+            }
+            // トークンを更新する必要がある場合は、トークンを更新したセッションデータを作成
+            if result == TokenValidation::RequiredRefresh {
+                session_data = generate_session_data(session_data.user_id, tokens)
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
             }
 
             // リクエストにユーザーをデータとして追加
@@ -267,11 +279,30 @@ where
 
             // リクエストの処理が完了した後、リクエストの処理を移譲した先から返却されたフューチャーを、
             // レスポンスとして返却
-            let resp = future.await?;
+            let mut resp = future.await?;
 
-            // TODO: トークンを更新する処理を実装
             // トークンを更新する必要がある場合は、トークンを更新してRedisに記録するとともに、
             // ブラウザにトークンをクッキーに記録するように指示
+            if result == TokenValidation::RequiredRefresh {
+                let response = resp.response_mut();
+                // Redisにセッションデータを登録
+                session
+                    .insert(&session_data)
+                    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+                // ブラウザにトークンをクッキーに記録するように指示
+                let access_token_cookie = build_session_data_cookie(
+                    ACCESS_TOKEN_COOKIE_NAME,
+                    &session_data.access_token,
+                    &session_cookie,
+                );
+                let refresh_token_cookie = build_session_data_cookie(
+                    REFRESH_TOKEN_COOKIE_NAME,
+                    &session_data.refresh_token,
+                    &session_cookie,
+                );
+                response.add_cookie(&access_token_cookie).unwrap();
+                response.add_cookie(&refresh_token_cookie).unwrap();
+            }
 
             tracing::info!("JwtAuthMiddlewareが応答を返しました。");
             Ok(resp)

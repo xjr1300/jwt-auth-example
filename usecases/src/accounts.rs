@@ -5,18 +5,17 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use configurations::{
+    generate_session_data,
     password::{verify_password, AuthError},
     session::{SessionData, TypedSession},
     telemetries::spawn_blocking_with_tracing,
-    tokens::generate_jwt_pair,
-    Settings, TokensSettings,
+    Settings,
 };
 use domains::models::{
     users::{HashedPassword, RawPassword, User, UserId, UserName},
     EmailAddress,
 };
 use infrastructures::repositories::users::PgUserRepository;
-use miscellaneous::current_unix_epoch;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SignupError {
@@ -144,40 +143,6 @@ async fn validate_credentials(
     Ok(user)
 }
 
-/// セッションデータを生成する。
-///
-/// # Arguments
-///
-/// * `user_id` - ユーザーID。
-/// * `token_settings` - トークン設定。
-///
-/// # Returns
-///
-/// セッションデータ。
-fn generate_session_data(
-    user_id: Uuid,
-    token_settings: &TokensSettings,
-) -> Result<SessionData, LoginError> {
-    let base_epoch = current_unix_epoch();
-    let access_expiration = base_epoch + token_settings.access_token_duration();
-    let refresh_expiration = base_epoch + token_settings.refresh_token_duration();
-    let (access_token, refresh_token) = generate_jwt_pair(
-        user_id,
-        &token_settings.secret_key,
-        access_expiration,
-        refresh_expiration,
-    )
-    .map_err(LoginError::UnexpectedError)?;
-
-    Ok(SessionData {
-        user_id,
-        access_token,
-        access_expiration,
-        refresh_token,
-        refresh_expiration,
-    })
-}
-
 /// ユーザーの最終更新日時を更新する。
 ///
 /// # Arguments
@@ -222,7 +187,9 @@ pub async fn login(
 
     // セッションデータを生成
     let Settings { tokens, .. } = settings;
-    let session_data = generate_session_data(user.id().value(), tokens)?;
+    #[allow(clippy::redundant_closure)]
+    let session_data = generate_session_data(user.id().value(), tokens)
+        .map_err(|e| LoginError::UnexpectedError(e))?;
 
     // セッション固定化攻撃に対する対策として、セッションを更新
     session.renew();

@@ -1,7 +1,7 @@
 use std::future::{ready, Ready};
 
 use actix_session::{Session, SessionExt};
-use actix_web::{cookie::Cookie, dev::Payload, FromRequest, HttpRequest, HttpResponseBuilder};
+use actix_web::{cookie::Cookie, dev::Payload, FromRequest, HttpRequest};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -100,7 +100,7 @@ impl FromRequest for TypedSession {
     }
 }
 
-fn _build_session_data_cookie<'a>(
+pub fn build_session_data_cookie<'a>(
     name: &'a str,
     value: &'a str,
     settings: &'a SessionCookieSettings,
@@ -112,38 +112,4 @@ fn _build_session_data_cookie<'a>(
         .same_site(settings.same_site.to_owned())
         .finish()
         .into_owned()
-}
-
-/// レスポンスにセッションデータをクッキーとして追加する。
-///
-/// # Arguments
-///
-/// * `builder` - HTTPレスポンスビルダー。
-/// * `session_data` - クッキーとして追加するセッションデータ。
-/// * `settings` - セッションクッキー設定。
-///
-/// # Returns
-///
-/// セッションデータをクッキーとして追加したHTTPレスポンスビルダー。
-pub fn add_session_data_cookies(
-    mut builder: HttpResponseBuilder,
-    session_data: &SessionData,
-    settings: &SessionCookieSettings,
-) -> HttpResponseBuilder {
-    // セッションデータを格納するクッキーを構築
-    let access_token_cookie = _build_session_data_cookie(
-        ACCESS_TOKEN_COOKIE_NAME,
-        &session_data.access_token,
-        settings,
-    );
-    let refresh_token_cookie = _build_session_data_cookie(
-        REFRESH_TOKEN_COOKIE_NAME,
-        &session_data.refresh_token,
-        settings,
-    );
-    // HTTPレスポンスビルダーにクッキーを追加
-    builder.cookie(access_token_cookie);
-    builder.cookie(refresh_token_cookie);
-
-    builder
 }
