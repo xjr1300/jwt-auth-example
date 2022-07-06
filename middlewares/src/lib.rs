@@ -47,12 +47,13 @@ use std::pin::Pin;
 use std::rc::Rc;
 
 use actix_session::SessionExt;
+use actix_web::cookie::time::OffsetDateTime;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::{body::MessageBody, web};
 use sqlx::PgPool;
 
 use configurations::{
-    session::{SessionData, TypedSession},
+    session::{SessionData, TypedSession, ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME},
     Settings,
 };
 
@@ -113,6 +114,84 @@ fn get_session_data(service_req: &ServiceRequest) -> Result<Option<SessionData>,
     Ok(session_data.unwrap())
 }
 
+fn get_tokens(service_req: &ServiceRequest) -> (String, String) {
+    let access_token = match service_req.cookie(ACCESS_TOKEN_COOKIE_NAME) {
+        Some(cookie) => cookie.value().to_owned(),
+        None => "".to_owned(),
+    };
+    let refresh_token = match service_req.cookie(REFRESH_TOKEN_COOKIE_NAME) {
+        Some(cookie) => cookie.value().to_owned(),
+        None => "".to_owned(),
+    };
+
+    (access_token, refresh_token)
+}
+
+#[derive(PartialEq)]
+enum TokenValidation {
+    /// 成功
+    Succeed,
+    /// リフレッシュを要求
+    RequiredRefresh,
+    /// 失敗
+    Failure,
+}
+
+/// Redisに記録されているセッションデータと、クッキーに記録されたアクセストークンとリフレッシュトークンを評価する。
+///
+/// 1. リフレッシュトークンの有効期限が切れていた場合は、認証を許可できないため`失敗`を返却。
+/// 2. アクセストークンの有効期限を確認して、有効期限内であればアクセストークンが一致するか確認
+///   * 一致すれば`成功`を返却
+///   * 一致しなければ`失敗`を返却
+/// 3. アクセストークンの有効期限が切れている場合は、リフレッシュトークンが一致するか確認
+///   * 一致すれば`リフレッシュ要求`を返却
+///   * 一致しなければ`失敗`を返却
+///
+/// # Arguments
+///
+/// * `session_data` - Redisに記録されているセッションデータ。
+/// * `access_token` - クッキーに記録されていたアクセストークン。
+/// * `refresh_token` - クッキーに記録されていたリフレッシュトークン。
+///
+/// # Returns
+///
+/// * `TokenValidation::Succeed` - アクセストークンの検証に成功したため、保護されたリソースにアクセス可能。
+/// * `TokenValidation::RequiredRefresh` - リフレッシュトークンの検証に成功したため、保護されたリソースにアクセス可能。
+///     ただし、トークンをリフレッシュする必要がある。
+/// * `TokenValidation::Failure` - トークンの検証に失敗したため、保護されたリソースにアクセス不可。
+fn evaluate_session_data_and_tokens(
+    session_data: &SessionData,
+    access_token: &str,
+    refresh_token: &str,
+) -> TokenValidation {
+    // 現在日時をUnixエポック秒で取得
+    let now = OffsetDateTime::now_utc().unix_timestamp() as u64;
+
+    // リフレッシュトークンの有効期限が切れている場合は`失敗`を返却
+    if session_data.refresh_expiration < now {
+        return TokenValidation::Failure;
+    }
+
+    // アクセストークンが有効期限ないか確認
+    if now <= session_data.access_expiration {
+        // アクセストークンが一致するか確認
+        if session_data.access_token == access_token {
+            return TokenValidation::Succeed;
+        } else {
+            return TokenValidation::Failure;
+        }
+    }
+
+    // リフレッシュトークンが一致するか確認
+    if session_data.refresh_token == refresh_token {
+        TokenValidation::RequiredRefresh
+    } else {
+        TokenValidation::Failure
+    }
+}
+
+// TODO: evaluate_session_data_and_tokens関数の単体テストの実装
+
 impl<S, B> Service<ServiceRequest> for JwtAuthMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error> + 'static,
@@ -140,12 +219,21 @@ where
             // セッションデータを取得
             let session_data = get_session_data(&service_req)?;
             tracing::info!("セッションデータ: {:?}", session_data);
+            // トークンを取得
+            let (access_token, refresh_token) = get_tokens(&service_req);
 
             // セッションデータがない場合は、`401 Unauthorized`で応答
             if session_data.is_none() {
                 return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
             }
-            let _session_data = session_data.unwrap();
+            let session_data = session_data.unwrap();
+
+            // Redisに格納されているセッションデータと、クッキーに記録されていたトークンを評価
+            let result =
+                evaluate_session_data_and_tokens(&session_data, &access_token, &refresh_token);
+            if result == TokenValidation::Failure {
+                return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
+            }
 
             // 後続のミドルウェアなどにリクエストの処理を移譲
             let future = service.call(service_req);
@@ -153,6 +241,10 @@ where
             // リクエストの処理が完了した後、リクエストの処理を移譲した先から返却されたフューチャーを、
             // レスポンスとして返却
             let resp = future.await?;
+
+            // TODO: トークンを更新する処理を実装
+            // トークンを更新する必要がある場合は、トークンを更新してRedisに記録するとともに、
+            // ブラウザにトークンをクッキーに記録するように指示
 
             tracing::info!("JwtAuthMiddlewareが応答を返しました。");
             Ok(resp)
