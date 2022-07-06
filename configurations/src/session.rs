@@ -101,18 +101,18 @@ impl FromRequest for TypedSession {
 }
 
 /// クッキーを構築する。
-/// 
+///
 /// 構築するクッキーのSecure及びSameSiteは、システム設定による。
 /// また、クッキーのPathは`/`で、HttpOnlyである。
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `name` - クッキーの名前。
 /// * `value` - クッキーの値。
 /// * `settings` - システム設定のセッションクッキー設定。
-/// 
+///
 /// # Returns
-/// 
+///
 /// クッキー。
 pub fn build_session_data_cookie<'a>(
     name: &'a str,

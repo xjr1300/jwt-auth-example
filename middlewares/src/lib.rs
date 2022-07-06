@@ -48,8 +48,7 @@ use std::rc::Rc;
 
 use actix_session::SessionExt;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
-use actix_web::HttpMessage;
-use actix_web::{body::MessageBody, web};
+use actix_web::{web, HttpMessage};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -67,13 +66,12 @@ use miscellaneous::current_unix_epoch;
 
 pub struct JwtAuth;
 
-impl<S, B> Transform<S, ServiceRequest> for JwtAuth
+impl<S> Transform<S, ServiceRequest> for JwtAuth
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error> + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error> + 'static,
     S::Future: 'static,
-    B: MessageBody + 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = actix_web::Error;
     type Transform = JwtAuthMiddleware<S>;
     type InitError = ();
@@ -216,13 +214,12 @@ async fn get_user(pool: &PgPool, user_id: Uuid) -> Result<User, actix_web::Error
     Ok(user.unwrap())
 }
 
-impl<S, B> Service<ServiceRequest> for JwtAuthMiddleware<S>
+impl<S> Service<ServiceRequest> for JwtAuthMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error> + 'static,
+    S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error> + 'static,
     S::Future: 'static,
-    B: MessageBody + 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse;
     type Error = actix_web::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
 
