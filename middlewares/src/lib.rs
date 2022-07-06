@@ -51,7 +51,10 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::{body::MessageBody, web};
 use sqlx::PgPool;
 
-use configurations::{session::TypedSession, Settings};
+use configurations::{
+    session::{SessionData, TypedSession},
+    Settings,
+};
 
 pub struct JwtAuth;
 
@@ -74,18 +77,40 @@ where
     }
 }
 
-#[allow(clippy::type_complexity)]
-fn wrap_actix_error<B>(
-    e: actix_web::Error,
-) -> Pin<Box<std::future::Ready<Result<ServiceResponse<B>, actix_web::Error>>>>
-where
-    B: MessageBody + 'static,
-{
-    Box::pin(ready(Err(e)))
-}
-
 pub struct JwtAuthMiddleware<S> {
     service: Rc<S>,
+}
+
+fn get_settings(service_req: &ServiceRequest) -> Result<&Settings, actix_web::Error> {
+    let settings = service_req.app_data::<web::Data<Settings>>();
+    if settings.is_none() {
+        return Err(actix_web::error::ErrorInternalServerError(
+            "システム設定を取得できませんでした。",
+        ));
+    }
+
+    Ok(settings.unwrap().as_ref())
+}
+
+fn get_database_connection_pool(service_req: &ServiceRequest) -> Result<&PgPool, actix_web::Error> {
+    let pool = service_req.app_data::<web::Data<PgPool>>();
+    if pool.is_none() {
+        return Err(actix_web::error::ErrorInternalServerError(
+            "データベースコネクションプールを取得できませんでした。",
+        ));
+    }
+
+    Ok(pool.unwrap().as_ref())
+}
+
+fn get_session_data(service_req: &ServiceRequest) -> Result<Option<SessionData>, actix_web::Error> {
+    let session = TypedSession(service_req.get_session());
+    let session_data = session.get();
+    if let Err(e) = session_data {
+        return Err(actix_web::error::ErrorInternalServerError(e));
+    }
+
+    Ok(session_data.unwrap())
 }
 
 impl<S, B> Service<ServiceRequest> for JwtAuthMiddleware<S>
@@ -100,52 +125,37 @@ where
 
     forward_ready!(service);
 
-    fn call(&self, service_request: ServiceRequest) -> Self::Future {
+    fn call(&self, service_req: ServiceRequest) -> Self::Future {
         tracing::info!("JwtAuthMiddlewareが要求を受け取りました。");
 
-        // システム設定を取得
-        let settings = service_request.app_data::<web::Data<Settings>>();
-        if settings.is_none() {
-            return wrap_actix_error(actix_web::error::ErrorInternalServerError(
-                "システム設定を取得できませんでした。",
-            ));
-        }
-        let _settings = settings.unwrap().as_ref();
-        tracing::info!("システム設定: {:?}", _settings);
-        // データベースコネクションプールを取得
-        let pool = service_request.app_data::<web::Data<PgPool>>();
-        if pool.is_none() {
-            return wrap_actix_error(actix_web::error::ErrorInternalServerError(
-                "データベースコネクションプールを取得できませんでした。",
-            ));
-        }
-        let _pool = pool.unwrap().as_ref();
-        tracing::info!("データベースコネクションプール: {:?}", pool);
-        // セッションデータを取得
-        let session = TypedSession(service_request.get_session());
-        let session_data = session.get();
-        if let Err(e) = session_data {
-            return wrap_actix_error(actix_web::error::ErrorInternalServerError(e));
-        }
-        let session_data = session_data.unwrap();
-        tracing::info!("セッションデータ: {:?}", session_data);
-
-        // セッションデータがない場合は、`401 Unauthorized`で応答
-        if session_data.is_none() {
-            return wrap_actix_error(actix_web::error::ErrorUnauthorized("認証されていません。"));
-        }
-        let _session_data = session_data.unwrap();
-
-        // 後続のミドルウェアなどにリクエストの処理を移譲
-        let future = self.service.call(service_request);
+        let service = Rc::clone(&self.service);
 
         Box::pin(async move {
+            // システム設定を取得
+            let _settings = get_settings(&service_req)?;
+            tracing::info!("システム設定: {:?}", _settings);
+            // データベースコネクションプールを取得
+            let _pool = get_database_connection_pool(&service_req)?;
+            tracing::info!("データベースコネクションプール: {:?}", _pool);
+            // セッションデータを取得
+            let session_data = get_session_data(&service_req)?;
+            tracing::info!("セッションデータ: {:?}", session_data);
+
+            // セッションデータがない場合は、`401 Unauthorized`で応答
+            if session_data.is_none() {
+                return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
+            }
+            let _session_data = session_data.unwrap();
+
+            // 後続のミドルウェアなどにリクエストの処理を移譲
+            let future = service.call(service_req);
+
             // リクエストの処理が完了した後、リクエストの処理を移譲した先から返却されたフューチャーを、
             // レスポンスとして返却
-            let response = future.await?;
+            let resp = future.await?;
 
             tracing::info!("JwtAuthMiddlewareが応答を返しました。");
-            Ok(response)
+            Ok(resp)
         })
     }
 }
