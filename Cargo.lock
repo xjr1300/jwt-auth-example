@@ -1278,6 +1278,7 @@ dependencies = [
  "configurations",
  "domains",
  "infrastructures",
+ "miscellaneous",
  "sqlx",
  "tracing",
  "uuid",

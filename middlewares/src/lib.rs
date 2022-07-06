@@ -47,21 +47,23 @@ use std::pin::Pin;
 use std::rc::Rc;
 
 use actix_session::SessionExt;
-use actix_web::cookie::time::OffsetDateTime;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::HttpMessage;
 use actix_web::{body::MessageBody, web};
-use configurations::generate_session_data;
-use configurations::session::build_session_data_cookie;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use configurations::{
-    session::{SessionData, TypedSession, ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME},
+    generate_session_data,
+    session::{
+        build_session_data_cookie, SessionData, TypedSession, ACCESS_TOKEN_COOKIE_NAME,
+        REFRESH_TOKEN_COOKIE_NAME,
+    },
     Settings,
 };
 use domains::models::users::{User, UserId};
 use infrastructures::repositories::users::PgUserRepository;
+use miscellaneous::current_unix_epoch;
 
 pub struct JwtAuth;
 
@@ -132,7 +134,7 @@ fn get_tokens(service_req: &ServiceRequest) -> (String, String) {
     (access_token, refresh_token)
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum TokenValidation {
     /// 成功
     Succeed,
@@ -164,13 +166,13 @@ enum TokenValidation {
 /// * `TokenValidation::RequiredRefresh` - リフレッシュトークンの検証に成功したため、保護されたリソースにアクセス可能。
 ///     ただし、トークンをリフレッシュする必要がある。
 /// * `TokenValidation::Failure` - トークンの検証に失敗したため、保護されたリソースにアクセス不可。
-fn evaluate_session_data_and_tokens(
+fn inspect_token_by_session_data(
     session_data: &SessionData,
     access_token: &str,
     refresh_token: &str,
 ) -> TokenValidation {
     // 現在日時をUnixエポック秒で取得
-    let now = OffsetDateTime::now_utc().unix_timestamp() as u64;
+    let now = current_unix_epoch();
 
     // リフレッシュトークンの有効期限が切れている場合は`失敗`を返却
     if session_data.refresh_expiration < now {
@@ -213,8 +215,6 @@ async fn get_user(pool: &PgPool, user_id: Uuid) -> Result<User, actix_web::Error
 
     Ok(user.unwrap())
 }
-
-// TODO: evaluate_session_data_and_tokens関数の単体テストの実装
 
 impl<S, B> Service<ServiceRequest> for JwtAuthMiddleware<S>
 where
@@ -260,7 +260,7 @@ where
             let (access_token, refresh_token) = get_tokens(&service_req);
             // Redisに格納されているセッションデータと、クッキーに記録されていたトークンを評価
             let result =
-                evaluate_session_data_and_tokens(&session_data, &access_token, &refresh_token);
+                inspect_token_by_session_data(&session_data, &access_token, &refresh_token);
             if result == TokenValidation::Failure {
                 return Err(actix_web::error::ErrorUnauthorized("認証されていません。"));
             }
@@ -307,5 +307,91 @@ where
             tracing::info!("JwtAuthMiddlewareが応答を返しました。");
             Ok(resp)
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inspect_token_by_session_data_succeed() {
+        let now = current_unix_epoch();
+        let access_token = "foo";
+        let refresh_token = "bar";
+        let session_data = SessionData {
+            user_id: Uuid::new_v4(),
+            access_token: access_token.to_owned(),
+            access_expiration: now + 300,
+            refresh_token: refresh_token.to_owned(),
+            refresh_expiration: now + 1800,
+        };
+        let result = inspect_token_by_session_data(&session_data, access_token, refresh_token);
+        assert_eq!(result, TokenValidation::Succeed);
+    }
+
+    #[test]
+    fn inspect_token_by_session_data_required_refresh() {
+        let now = current_unix_epoch();
+        let access_token = "foo";
+        let refresh_token = "bar";
+
+        let session_data = SessionData {
+            user_id: Uuid::new_v4(),
+            access_token: "baz".to_owned(),
+            access_expiration: now - 1,
+            refresh_token: refresh_token.to_owned(),
+            refresh_expiration: now + 1800,
+        };
+        let result = inspect_token_by_session_data(&session_data, access_token, refresh_token);
+        assert_eq!(result, TokenValidation::RequiredRefresh);
+    }
+
+    #[test]
+    fn inspect_token_by_session_data_failure_for_refresh_token_expiration() {
+        let now = current_unix_epoch();
+        let access_token = "foo";
+        let refresh_token = "bar";
+        let session_data = SessionData {
+            user_id: Uuid::new_v4(),
+            access_token: access_token.to_owned(),
+            access_expiration: now + 300,
+            refresh_token: refresh_token.to_owned(),
+            refresh_expiration: now - 1,
+        };
+        let result = inspect_token_by_session_data(&session_data, access_token, refresh_token);
+        assert_eq!(result, TokenValidation::Failure);
+    }
+
+    #[test]
+    fn inspect_token_by_session_data_failure_for_access_token() {
+        let now = current_unix_epoch();
+        let access_token = "foo";
+        let refresh_token = "bar";
+        let session_data = SessionData {
+            user_id: Uuid::new_v4(),
+            access_token: "baz".to_owned(),
+            access_expiration: now + 300,
+            refresh_token: refresh_token.to_owned(),
+            refresh_expiration: now + 1800,
+        };
+        let result = inspect_token_by_session_data(&session_data, access_token, refresh_token);
+        assert_eq!(result, TokenValidation::Failure);
+    }
+
+    #[test]
+    fn inspect_token_by_session_data_failure_for_refresh_token() {
+        let now = current_unix_epoch();
+        let access_token = "foo";
+        let refresh_token = "bar";
+        let session_data = SessionData {
+            user_id: Uuid::new_v4(),
+            access_token: access_token.to_owned(),
+            access_expiration: now - 1,
+            refresh_token: "baz".to_owned(),
+            refresh_expiration: now + 1800,
+        };
+        let result = inspect_token_by_session_data(&session_data, access_token, refresh_token);
+        assert_eq!(result, TokenValidation::Failure);
     }
 }

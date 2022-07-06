@@ -9,6 +9,7 @@ actix-session = { version = "0.6", features = ["redis-rs-tls-session"] }
 configurations = { path = "../configurations" }
 domains = { path = "../domains" }
 infrastructures = { path = "../infrastructures" }
+miscellaneous = { path = "../miscellaneous" }
 tracing = "0.1"
 uuid = { version = "1.1", features = ["v4"] }
 
