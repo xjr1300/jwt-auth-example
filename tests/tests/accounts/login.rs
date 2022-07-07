@@ -1,5 +1,6 @@
 extern crate web_server;
 
+use configurations::session::{ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME};
 use configurations::{SessionCookieSettings, Settings};
 use cookie_store::{Cookie, CookieExpiration};
 // use redis::Commands;
@@ -103,7 +104,7 @@ async fn active_user_authorized() {
         assert_cookie(session_id_cookie.unwrap(), session_cookie);
 
         // トークン
-        let cookie_names = vec!["access_token", "refresh_token"];
+        let cookie_names = vec![ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME];
         for cookie_name in cookie_names {
             let cookie = store.get("localhost", "/", cookie_name);
             assert!(

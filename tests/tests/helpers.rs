@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPool, Connection, Executor, PgConnection};
 use uuid::Uuid;
 
+use configurations::session::{ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME};
 use configurations::telemetries::{get_subscriber, init_subscriber};
 use configurations::{DatabaseSettings, Settings};
 use web_server::startup::{get_connection_pool, WebApp};
@@ -92,6 +93,22 @@ impl TestWebApp {
             .send()
             .await
             .expect("保護リソース取得APIにアクセスできませんでした。")
+    }
+
+    /// アクセストークンとリフレッシュトークンを取得する。
+    pub fn get_token_values(&self) -> (String, String) {
+        let store = self.cookie_store.lock().unwrap();
+        let access_token_cookie = store
+            .get("localhost", "/", ACCESS_TOKEN_COOKIE_NAME)
+            .unwrap();
+        let refresh_token_cookie = store
+            .get("localhost", "/", REFRESH_TOKEN_COOKIE_NAME)
+            .unwrap();
+
+        (
+            access_token_cookie.value().to_owned(),
+            refresh_token_cookie.value().to_owned(),
+        )
     }
 }
 
