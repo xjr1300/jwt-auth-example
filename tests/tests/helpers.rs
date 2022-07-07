@@ -87,6 +87,15 @@ impl TestWebApp {
             .expect("ログインAPIにアクセスできませんでした。")
     }
 
+    /// ログアウトAPIを呼び出す。
+    pub async fn call_logout_api(&self) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/accounts/logout", self.web_app_address))
+            .send()
+            .await
+            .expect("ログアウトAPIにアクセスできませんでした。")
+    }
+
     /// 保護リソース取得APIを呼び出す。
     pub async fn call_protected_api(&self) -> reqwest::Response {
         self.api_client

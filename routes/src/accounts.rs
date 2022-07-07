@@ -1,16 +1,19 @@
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use actix_web::{cookie::Cookie, http::header::ContentType, web, HttpResponse};
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use sqlx::PgPool;
 
 use configurations::{
-    session::{add_session_data_cookies, TypedSession},
+    session::{
+        add_session_data_cookies, TypedSession, ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME,
+    },
     Settings,
 };
 use domains::models::{
     users::{RawPassword, UserName},
     EmailAddress,
 };
+use middlewares::JwtAuth;
 use usecases::accounts::{self, LoginError, SignupError};
 
 use crate::responses::e400;
@@ -90,9 +93,37 @@ pub async fn login(
     Ok(response)
 }
 
+/// 有効期限の切れたトークンを記録するクッキーを作成する。
+fn create_expired_token_cookies<'a>() -> (Cookie<'a>, Cookie<'a>) {
+    let mut access = Cookie::new(ACCESS_TOKEN_COOKIE_NAME, "");
+    access.make_removal();
+    let mut refresh = Cookie::new(REFRESH_TOKEN_COOKIE_NAME, "");
+    refresh.make_removal();
+
+    (access, refresh)
+}
+
+#[tracing::instrument(skip(session), name = "Logout user")]
+pub async fn logout(session: TypedSession) -> Result<HttpResponse, actix_web::Error> {
+    // クッキーに記録しているセッションIDを削除するようにブラウザに指示して、Redisからセッションデータを削除
+    session.purge();
+    // 有効期限のないトークン用のクッキーを生成
+    let (access_token_cookie, refresh_token_cookie) = create_expired_token_cookies();
+
+    Ok(HttpResponse::Ok()
+        .cookie(access_token_cookie)
+        .cookie(refresh_token_cookie)
+        .finish())
+}
+
 /// アカウントスコープを返却する。
 pub fn accounts_scope() -> actix_web::Scope {
     web::scope("/accounts")
         .service(web::resource("/signup").route(web::post().to(signup)))
         .service(web::resource("/login").route(web::post().to(login)))
+        .service(
+            web::scope("")
+                .wrap(JwtAuth)
+                .service(web::resource("/logout").route(web::post().to(logout))),
+        )
 }

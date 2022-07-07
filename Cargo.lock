@@ -1791,6 +1791,7 @@ dependencies = [
  "actix-web",
  "configurations",
  "domains",
+ "middlewares",
  "secrecy",
  "serde",
  "serde_json",
