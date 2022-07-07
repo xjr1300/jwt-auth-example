@@ -1,5 +1,6 @@
 use crate::helpers::{spawn_web_app, LoginData};
 
+// ログインしているユーザーがログアウトできることを確認するテスト
 #[tokio::test]
 #[ignore]
 async fn logout() {
@@ -37,4 +38,14 @@ async fn logout() {
     //         None => (),
     //     }
     // }
+}
+
+// ログインしていないユーザーがログアウトできないことを確認するテスト
+#[tokio::test]
+#[ignore]
+async fn cannot_logout() {
+    // ログアウト
+    let app = spawn_web_app(true).await;
+    let response = app.call_logout_api().await;
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 }

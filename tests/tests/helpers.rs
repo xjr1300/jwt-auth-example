@@ -105,6 +105,15 @@ impl TestWebApp {
             .expect("保護リソース取得APIにアクセスできませんでした。")
     }
 
+    /// パスワード変更APIを呼び出す。
+    pub async fn call_change_password_api(&self) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/change_password", self.web_app_address))
+            .send()
+            .await
+            .expect("パスワード変更APIにアクセスできませんでした。")
+    }
+
     /// アクセストークンとリフレッシュトークンを取得する。
     pub fn get_token_values(&self) -> (Option<String>, Option<String>) {
         let store = self.cookie_store.lock().unwrap();
