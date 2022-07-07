@@ -6,7 +6,7 @@ use middlewares::JwtAuth;
 use secrecy::ExposeSecret;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
-use routes::{accounts, health_check, protected_resource};
+use routes::{accounts::accounts_scope, health_check, protected_resource};
 
 use configurations::{DatabaseSettings, Settings};
 
@@ -64,11 +64,7 @@ impl WebApp {
                 .app_data(settings.clone())
                 .app_data(pool.clone())
                 .route("/health_check", web::get().to(health_check::health_check))
-                .service(
-                    web::scope("/accounts")
-                        .service(web::resource("/signup").route(web::post().to(accounts::signup)))
-                        .service(web::resource("/login").route(web::post().to(accounts::login))),
-                )
+                .service(accounts_scope())
                 .service(web::scope("").wrap(JwtAuth).route(
                     "/protected_resource",
                     web::get().to(protected_resource::protected_resource),

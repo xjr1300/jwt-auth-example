@@ -89,3 +89,10 @@ pub async fn login(
 
     Ok(response)
 }
+
+/// アカウントスコープを返却する。
+pub fn accounts_scope() -> actix_web::Scope {
+    web::scope("/accounts")
+        .service(web::resource("/signup").route(web::post().to(signup)))
+        .service(web::resource("/login").route(web::post().to(login)))
+}
