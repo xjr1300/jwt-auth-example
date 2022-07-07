@@ -2,7 +2,6 @@ use std::env;
 
 use actix_web::cookie::{time::Duration, SameSite};
 use anyhow::bail;
-use dotenvy::dotenv;
 use once_cell::sync::Lazy;
 use secrecy::{ExposeSecret, Secret};
 use sqlx::{postgres::PgConnectOptions, ConnectOptions};
@@ -112,8 +111,6 @@ fn seconds_from_env(key: &str) -> Duration {
 
 /// 環境変数
 pub static ENV_VALUES: Lazy<EnvValues> = Lazy::new(|| {
-    dotenv().ok();
-
     EnvValues {
         // Rust設定
         rust_log: string_from_env("RUST_LOG"),
