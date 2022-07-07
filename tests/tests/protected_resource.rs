@@ -33,11 +33,15 @@ async fn cannot_access_protected_resource() {
 /// 保護されたリソースにアクセスできることを確認する。また、ブラウザにクッキーとして保存されたアクセストークン
 /// とリフレッシュトークンが、ログインしたときと2回目に保護されたリソースにアクセスしたときで、異なることを
 /// 確認する。
+// FIXME: 単体で本テストを実行するとパスするが、他の統合テストと一緒に実行するとパスしない。
+// 原因を特定して修正すること。
+// 修正するまで、統合テストは`./scripts/integration_tests.sh`スクリプトで実行すること。
 #[tokio::test]
 #[ignore]
 async fn can_access_protected_resource_at_within_expiration_of_refresh_token() {
-    // .envファイルから環境変数を取り込まないように、テスト用Webアプリを起動
-    dotenvy::from_filename(".env-access-token-test").ok();
+    // 環境変数を設定して、テスト用Webアプリを起動
+    dotenvy::dotenv().ok();
+    std::env::set_var("ACCESS_TOKEN_SECONDS", "1");
     let app = spawn_web_app(false).await;
     let user = &app.test_users.active_user;
     // ログイン
@@ -71,11 +75,16 @@ async fn can_access_protected_resource_at_within_expiration_of_refresh_token() {
 }
 
 // ログイン済みのユーザーが、リフレッシュトークンが失効したとき、保護されたリソースにアクセスできないことを確認するテスト
+// FIXME: 単体で本テストを実行するとパスするが、他の統合テストと一緒に実行するとパスしない。
+// 原因を特定して修正すること。
+// 修正するまで、統合テストは`./scripts/integration_tests.sh`スクリプトで実行すること。
 #[tokio::test]
 #[ignore]
 async fn cannot_access_protected_resource_at_expired_expiration_of_refresh_token() {
-    // .envファイルから環境変数を取り込まないように、テスト用Webアプリを起動
-    dotenvy::from_filename(".env-refresh-token-test").ok();
+    // 環境変数を設定して、テスト用Webアプリを起動
+    dotenvy::dotenv().ok();
+    std::env::set_var("ACCESS_TOKEN_SECONDS", "1");
+    std::env::set_var("REFRESH_TOKEN_SECONDS", "1");
     let app = spawn_web_app(false).await;
     let user = &app.test_users.active_user;
     // ログイン
