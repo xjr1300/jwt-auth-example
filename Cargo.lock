@@ -465,7 +465,6 @@ dependencies = [
  "actix-web",
  "anyhow",
  "argon2",
- "dotenvy",
  "hmac",
  "jwt",
  "miscellaneous",
