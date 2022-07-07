@@ -43,7 +43,7 @@ async fn logout() {
 // ログインしていないユーザーがログアウトできないことを確認するテスト
 #[tokio::test]
 #[ignore]
-async fn cannot_login() {
+async fn cannot_logout() {
     // ログアウト
     let app = spawn_web_app(true).await;
     let response = app.call_logout_api().await;
