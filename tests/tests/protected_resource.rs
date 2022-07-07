@@ -106,4 +106,10 @@ async fn cannot_access_protected_resource_at_expired_expiration_of_refresh_token
     // 再度、保護されたリソースにアクセス
     let response = app.call_protected_api().await;
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    // FIXME: トークンを記録したクッキーが削除されていることを確認
+    // // 再度、アクセストークンとリフレッシュトークンを取得
+    // let (access_token_2nd, refresh_token_2nd) = app.get_token_values();
+    // // アクセストークンとリフレッシュトークンが変更されていることを確認
+    // assert!(access_token_2nd.is_none());
+    // assert!(refresh_token_2nd.is_none());
 }

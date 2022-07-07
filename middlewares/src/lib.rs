@@ -211,6 +211,7 @@ async fn get_user(pool: &PgPool, user_id: Uuid) -> Result<User, actix_web::Error
     Ok(user.unwrap())
 }
 
+// FIXME: 認証に失敗した場合、ブラウザにトークンを記録したクッキーを削除するように指示するように修正すること。
 impl<S> Service<ServiceRequest> for JwtAuthMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error> + 'static,
