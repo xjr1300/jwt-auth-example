@@ -1,5 +1,3 @@
-use dotenvy::dotenv;
-
 use crate::helpers::{spawn_web_app, LoginData};
 
 // ログインしたユーザが、保護されたリソースにアクセスできることを確認するテスト。
@@ -38,11 +36,8 @@ async fn cannot_access_protected_resource() {
 #[tokio::test]
 #[ignore]
 async fn can_access_protected_resource_at_within_expiration_of_refresh_token() {
-    dotenv().ok();
-    // アクセストークンを2秒に設定
-    std::env::set_var("ACCESS_TOKEN_SECONDS", "2");
-
-    // テスト用Webアプリ起動
+    // .envファイルから環境変数を取り込まないように、テスト用Webアプリを起動
+    dotenvy::from_filename(".env-access-token-test").ok();
     let app = spawn_web_app(false).await;
     let user = &app.test_users.active_user;
     // ログイン
@@ -60,8 +55,9 @@ async fn can_access_protected_resource_at_within_expiration_of_refresh_token() {
     let text = response.text().await.unwrap();
     assert_eq!(text, user.id().value().to_string());
 
-    // 3秒待機
-    std::thread::sleep(std::time::Duration::from_secs(3));
+    // 2秒待機
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
     // 再度、保護されたリソースにアクセス
     let response = app.call_protected_api().await;
     assert_eq!(response.status(), reqwest::StatusCode::OK);
@@ -74,10 +70,31 @@ async fn can_access_protected_resource_at_within_expiration_of_refresh_token() {
     assert!(refresh_token != refresh_token_2nd);
 }
 
-// TODO: リフレッシュトークンの期限が切れていて、保護されたリソースにアクセスできないことを確認するテストの実装
-// ログイン済みのユーザーが、リフレッシュトークンの有効期限が切れていて、保護されたリソースにアクセスできないことを確認するテストの実装をる。また、
-// ブラウザのセッションデータクッキーが削除されていることを確認する。
+// ログイン済みのユーザーが、リフレッシュトークンが失効したとき、保護されたリソースにアクセスできないことを確認するテスト
 #[tokio::test]
 #[ignore]
-#[allow(dead_code)]
-async fn cannot_access_protected_resource_at_expired_expiration_of_refresh_token() {}
+async fn cannot_access_protected_resource_at_expired_expiration_of_refresh_token() {
+    // .envファイルから環境変数を取り込まないように、テスト用Webアプリを起動
+    dotenvy::from_filename(".env-refresh-token-test").ok();
+    let app = spawn_web_app(false).await;
+    let user = &app.test_users.active_user;
+    // ログイン
+    let data = LoginData {
+        email_address: user.email_address().value().to_owned(),
+        password: app.test_users.active_user_password.clone(),
+    };
+    let response = app.call_login_api(&data).await;
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    // 保護されたリソースにアクセス
+    let response = app.call_protected_api().await;
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    let text = response.text().await.unwrap();
+    assert_eq!(text, user.id().value().to_string());
+
+    // 2秒待機
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    // 再度、保護されたリソースにアクセス
+    let response = app.call_protected_api().await;
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+}

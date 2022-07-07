@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cookie_store::Cookie;
 use dotenvy::dotenv;
 use once_cell::sync::Lazy;
 use reqwest_cookie_store::CookieStoreMutex;
@@ -96,24 +97,27 @@ impl TestWebApp {
     }
 
     /// アクセストークンとリフレッシュトークンを取得する。
-    pub fn get_token_values(&self) -> (String, String) {
+    pub fn get_token_values(&self) -> (Option<String>, Option<String>) {
         let store = self.cookie_store.lock().unwrap();
-        let access_token_cookie = store
-            .get("localhost", "/", ACCESS_TOKEN_COOKIE_NAME)
-            .unwrap();
-        let refresh_token_cookie = store
-            .get("localhost", "/", REFRESH_TOKEN_COOKIE_NAME)
-            .unwrap();
+        let access_token_cookie = store.get("localhost", "/", ACCESS_TOKEN_COOKIE_NAME);
+        let refresh_token_cookie = store.get("localhost", "/", REFRESH_TOKEN_COOKIE_NAME);
 
         (
-            access_token_cookie.value().to_owned(),
-            refresh_token_cookie.value().to_owned(),
+            get_cookie_value(access_token_cookie),
+            get_cookie_value(refresh_token_cookie),
         )
     }
 }
 
 fn get_cookie_store() -> Arc<CookieStoreMutex> {
     Arc::new(CookieStoreMutex::default())
+}
+
+fn get_cookie_value(cookie: Option<&Cookie>) -> Option<String> {
+    match cookie {
+        Some(cookie) => Some(cookie.value().to_owned()),
+        None => None,
+    }
 }
 
 /// テスト用Webアプリを生成する。
