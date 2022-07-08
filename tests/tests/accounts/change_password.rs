@@ -16,7 +16,7 @@ async fn cannot_access_change_password() {
 async fn can_change_password() {
     // ログイン
     let app = spawn_web_app(true).await;
-    let mut login_data = app.login_data();
+    let mut login_data = app.active_user_login_data();
     let response = app.call_login_api(&login_data).await;
     assert_eq!(response.status(), reqwest::StatusCode::OK);
 

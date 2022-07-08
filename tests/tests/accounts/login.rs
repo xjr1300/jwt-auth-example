@@ -42,11 +42,7 @@ async fn user_unauthorized_when_wrong_password() {
 #[ignore]
 async fn non_active_user_unauthorized() {
     let app = spawn_web_app(true).await;
-    let user = &app.test_users.non_active_user;
-    let data = LoginData {
-        email_address: user.email_address().value().to_owned(),
-        password: app.test_users.non_active_user_password.clone(),
-    };
+    let data = app.non_active_user_login_data();
     let response = app.call_login_api(&data).await;
     // 401 Unauthorizedが返却されるか確認
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
@@ -74,10 +70,7 @@ async fn active_user_authorized() {
         ..
     } = app.settings;
     let user = &app.test_users.active_user;
-    let data = LoginData {
-        email_address: user.email_address().value().to_owned(),
-        password: app.test_users.active_user_password.clone(),
-    };
+    let data = app.active_user_login_data();
     let response = app.call_login_api(&data).await;
     // 200 OKが返却されるか確認
     assert_eq!(response.status(), reqwest::StatusCode::OK);

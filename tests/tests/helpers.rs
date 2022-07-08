@@ -83,11 +83,23 @@ impl TestWebApp {
             .expect("サインアップAPIにアクセスできませんでした。")
     }
 
-    pub fn login_data(&self) -> LoginData {
+    pub fn active_user_login_data(&self) -> LoginData {
         LoginData {
             email_address: self
                 .test_users
                 .active_user
+                .email_address()
+                .value()
+                .to_owned(),
+            password: self.test_users.active_user_password.clone(),
+        }
+    }
+
+    pub fn non_active_user_login_data(&self) -> LoginData {
+        LoginData {
+            email_address: self
+                .test_users
+                .non_active_user
                 .email_address()
                 .value()
                 .to_owned(),
