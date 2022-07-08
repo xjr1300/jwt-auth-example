@@ -237,12 +237,14 @@ pub async fn change_password(
 ) -> anyhow::Result<(), ChangePasswordError> {
     // ユーザーの現在のパスワードが一致するか確認
     let expected_hashed = user.hashed_password().value().to_owned();
-    let _ = spawn_blocking_with_tracing(move || {
+    let result = spawn_blocking_with_tracing(move || {
         verify_password(&expected_hashed, current_password.value())
     })
     .await
-    .map_err(|e| ChangePasswordError::UnexpectedError(e.into()))
-    .map_err(|_| ChangePasswordError::IncorrectCurrentPassword)?;
+    .map_err(|e| ChangePasswordError::UnexpectedError(e.into()))?;
+    if result.is_err() {
+        return Err(ChangePasswordError::IncorrectCurrentPassword);
+    }
     // トランザクションを開始
     let mut tx = pool
         .begin()

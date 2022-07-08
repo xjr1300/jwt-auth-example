@@ -27,11 +27,8 @@ async fn anonymous_user_unauthorized() {
 #[ignore]
 async fn user_unauthorized_when_wrong_password() {
     let app = spawn_web_app(true).await;
-    let user = &app.test_users.active_user;
-    let data = LoginData {
-        email_address: user.email_address().value().to_owned(),
-        password: "wrong-password".to_owned(),
-    };
+    let mut data = app.active_user_login_data();
+    data.password = "5B_@T5aV#[)?".to_owned();
     let response = app.call_login_api(&data).await;
     // 401 Unauthorizedが返却されるか確認
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
