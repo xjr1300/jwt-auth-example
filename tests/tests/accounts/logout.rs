@@ -1,4 +1,4 @@
-use crate::helpers::{spawn_web_app, LoginData};
+use crate::helpers::spawn_web_app;
 
 // ログインしているユーザーがログアウトできることを確認するテスト
 #[tokio::test]
@@ -6,11 +6,7 @@ use crate::helpers::{spawn_web_app, LoginData};
 async fn logout() {
     // ログイン
     let app = spawn_web_app(true).await;
-    let user = &app.test_users.active_user;
-    let data = LoginData {
-        email_address: user.email_address().value().to_owned(),
-        password: app.test_users.active_user_password.clone(),
-    };
+    let data = app.active_user_login_data();
     let response = app.call_login_api(&data).await;
     assert_eq!(response.status(), reqwest::StatusCode::OK);
 
