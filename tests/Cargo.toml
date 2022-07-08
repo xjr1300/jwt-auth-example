@@ -20,6 +20,7 @@ reqwest = { version = "0.11", default-features = false, features = [
     "cookies"
 ] }
 reqwest_cookie_store = "0.3"
+routes = { path = "../routes" }
 secrecy = { version = "0.8", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["alloc"] }

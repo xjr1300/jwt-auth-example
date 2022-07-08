@@ -10,11 +10,11 @@ use configurations::{
     Settings,
 };
 use domains::models::{
-    users::{RawPassword, UserName},
+    users::{RawPassword, User, UserName},
     EmailAddress,
 };
 use middlewares::JwtAuth;
-use usecases::accounts::{self, LoginError, SignupError};
+use usecases::accounts::{self, ChangePasswordError, LoginError, SignupError};
 
 use crate::responses::e400;
 
@@ -110,6 +110,53 @@ pub async fn logout(session: TypedSession) -> Result<HttpResponse, actix_web::Er
     // 有効期限のないトークン用のクッキーを生成
     let (access_token_cookie, refresh_token_cookie) = create_expired_token_cookies();
 
+    // パスワード変更に成功したら、ブラウザにクッキーを削除するように指示
+    Ok(HttpResponse::Ok()
+        .cookie(access_token_cookie)
+        .cookie(refresh_token_cookie)
+        .finish())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangePasswordData {
+    pub current_password: Secret<String>,
+    pub new_password: Secret<String>,
+}
+
+#[tracing::instrument(skip(session, pool), name = "Change password")]
+pub async fn change_password(
+    user: web::ReqData<User>,
+    data: web::Json<ChangePasswordData>,
+    session: TypedSession,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let current_password = RawPassword::new(data.current_password.expose_secret()).map_err(e400)?;
+    let new_password = RawPassword::new(data.new_password.expose_secret()).map_err(e400)?;
+
+    accounts::change_password(
+        &user,
+        current_password,
+        new_password,
+        &session,
+        pool.as_ref(),
+    )
+    .await
+    .map_err(|e| {
+        tracing::error!("{:?}", e);
+        match e {
+            ChangePasswordError::UnexpectedError(_) => {
+                actix_web::error::ErrorInternalServerError(e)
+            }
+            ChangePasswordError::IncorrectCurrentPassword => actix_web::error::ErrorBadRequest(e),
+            ChangePasswordError::NotFound(_) => actix_web::error::ErrorBadRequest(e),
+        }
+    })?;
+
+    // 有効期限のないトークン用のクッキーを生成
+    let (access_token_cookie, refresh_token_cookie) = create_expired_token_cookies();
+
+    // パスワード変更に成功したら、ブラウザにクッキーを削除するように指示
     Ok(HttpResponse::Ok()
         .cookie(access_token_cookie)
         .cookie(refresh_token_cookie)
@@ -124,6 +171,7 @@ pub fn accounts_scope() -> actix_web::Scope {
         .service(
             web::scope("")
                 .wrap(JwtAuth)
-                .service(web::resource("/logout").route(web::post().to(logout))),
+                .service(web::resource("/logout").route(web::post().to(logout)))
+                .service(web::resource("/change_password").route(web::post().to(change_password))),
         )
 }

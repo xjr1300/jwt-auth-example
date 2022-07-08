@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use secrecy::Secret;
 use serde::Serialize;
 use sqlx::{PgPool, Postgres, Transaction};
@@ -15,7 +16,7 @@ use domains::models::{
     users::{HashedPassword, RawPassword, User, UserId, UserName},
     EmailAddress,
 };
-use infrastructures::repositories::users::PgUserRepository;
+use infrastructures::repositories::users::{PgUserRepository, UserRepositoryError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum SignupError {
@@ -164,6 +165,10 @@ async fn update_last_logged_in(
     Ok(())
 }
 
+/// ログインする。
+///
+/// ログインを試行して、ログインに成功したら、ユーザーの最終ログイン日時を更新して、Redisにセッションデータ
+/// を登録する。
 pub async fn login(
     email_address: EmailAddress,
     raw_password: Secret<String>,
@@ -208,4 +213,60 @@ pub async fn login(
 
     // セッションデータを返却
     Ok(session_data)
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ChangePasswordError {
+    #[error(transparent)]
+    UnexpectedError(anyhow::Error),
+    #[error("現在のパスワードが間違っています。")]
+    IncorrectCurrentPassword,
+    #[error("ユーザー({0})が存在しません。")]
+    NotFound(Uuid),
+}
+
+/// パスワードを変更する。
+///
+/// パスワードの変更を試行して、パスワードの変更に成功したら、Redisに格納されたセッションデータを削除する。
+pub async fn change_password(
+    user: &User,
+    current_password: RawPassword,
+    new_password: RawPassword,
+    session: &TypedSession,
+    pool: &PgPool,
+) -> anyhow::Result<(), ChangePasswordError> {
+    // ユーザーの現在のパスワードが一致するか確認
+    let expected_hashed = user.hashed_password().value().to_owned();
+    let _ = spawn_blocking_with_tracing(move || {
+        verify_password(&expected_hashed, current_password.value())
+    })
+    .await
+    .map_err(|e| ChangePasswordError::UnexpectedError(e.into()))
+    .map_err(|_| ChangePasswordError::IncorrectCurrentPassword)?;
+    // トランザクションを開始
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| ChangePasswordError::UnexpectedError(e.into()))?;
+    // パスワードを変更
+    let hashed_password =
+        HashedPassword::new(&new_password).map_err(ChangePasswordError::UnexpectedError)?;
+    PgUserRepository::default()
+        .change_password(user.id(), hashed_password, &mut tx)
+        .await
+        .map_err(|e| match e {
+            UserRepositoryError::UnexpectedError(e) => ChangePasswordError::UnexpectedError(e),
+            UserRepositoryError::NotFoundError(e) => ChangePasswordError::NotFound(e),
+            _ => ChangePasswordError::UnexpectedError(anyhow!(
+                "パスワード変更する機能に、実装上のエラーがあります。"
+            )),
+        })?;
+    // トランザクションをコミット
+    tx.commit()
+        .await
+        .map_err(|e| ChangePasswordError::UnexpectedError(e.into()))?;
+    // Redisからセッションデータを削除
+    session.purge();
+
+    Ok(())
 }

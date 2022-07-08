@@ -235,7 +235,7 @@ impl PgUserRepository {
     /// * `tx` - トランザクション。
     pub async fn delete(
         &self,
-        id: &UserId,
+        id: UserId,
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<(), UserRepositoryError> {
         // データベースを操作
@@ -266,7 +266,7 @@ impl PgUserRepository {
     /// * `hashed_password` - 新たに設定するハッシュ化したパスワード。
     pub async fn change_password(
         &self,
-        id: &UserId,
+        id: UserId,
         hashed_password: HashedPassword,
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<(), UserRepositoryError> {
