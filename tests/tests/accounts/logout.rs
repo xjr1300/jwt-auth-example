@@ -18,7 +18,7 @@ async fn logout() {
     let response = app.call_protected_api().await;
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    // TODO: トークンを記録したクッキーが削除されていることを確認
+    // FIXME: トークンを記録したクッキーが削除されていることを確認
     // use actix_web::cookie::time::Duration;
     // use configurations::session::{ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME};
     // let store = app.cookie_store.lock().unwrap();
