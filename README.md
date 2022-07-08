@@ -120,18 +120,18 @@
 cargo test
 ```
 
-### 統合テスト
-
-統合テストは以下の通り実行する。
-
-```bash
-cargo test -- --ignored
-```
-
 ### パッケージの単体テスト
 
 パッケージの単体テストは以下の通り実行する。
 
 ```bash
 cargo test --package <package-name>
+```
+
+### 統合テスト
+
+統合テストは以下の通り実行する。
+
+```bash
+./scripts/integration_tests.sh
 ```
