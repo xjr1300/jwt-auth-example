@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std::sync::{Arc, MutexGuard};
 
-use cookie_store::Cookie;
+use cookie_store::{Cookie, CookieStore};
 use dotenvy::dotenv;
 use once_cell::sync::Lazy;
 use reqwest_cookie_store::CookieStoreMutex;
@@ -157,21 +157,33 @@ impl TestWebApp {
             .expect("パスワード変更APIにアクセスできませんでした。")
     }
 
+    /// セッションIDを取得する。
+    pub fn get_session_id(&self) -> Option<String> {
+        let store = self.cookie_store.lock().unwrap();
+
+        get_cookie_value(get_cookie(
+            &store,
+            &self.settings.session_cookie.session_id_cookie_name,
+        ))
+    }
+
     /// アクセストークンとリフレッシュトークンを取得する。
     pub fn get_token_values(&self) -> (Option<String>, Option<String>) {
         let store = self.cookie_store.lock().unwrap();
-        let access_token_cookie = store.get("localhost", "/", ACCESS_TOKEN_COOKIE_NAME);
-        let refresh_token_cookie = store.get("localhost", "/", REFRESH_TOKEN_COOKIE_NAME);
 
         (
-            get_cookie_value(access_token_cookie),
-            get_cookie_value(refresh_token_cookie),
+            get_cookie_value(get_cookie(&store, ACCESS_TOKEN_COOKIE_NAME)),
+            get_cookie_value(get_cookie(&store, REFRESH_TOKEN_COOKIE_NAME)),
         )
     }
 }
 
 fn get_cookie_store() -> Arc<CookieStoreMutex> {
     Arc::new(CookieStoreMutex::default())
+}
+
+fn get_cookie<'a>(store: &'a MutexGuard<CookieStore>, key: &str) -> Option<&'a Cookie<'a>> {
+    store.get("localhost", "/", key)
 }
 
 fn get_cookie_value(cookie: Option<&Cookie>) -> Option<String> {

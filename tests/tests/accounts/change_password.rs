@@ -19,6 +19,9 @@ async fn can_change_password() {
     let mut login_data = app.active_user_login_data();
     let response = app.call_login_api(&login_data).await;
     assert_eq!(response.status(), reqwest::StatusCode::OK);
+    // セッションIDとトークンを記憶
+    let session_id = app.get_session_id().unwrap();
+    let (access_token, refresh_token) = app.get_token_values();
 
     // パスワードを変更
     let change_password_data = app.change_password_data();
@@ -37,4 +40,10 @@ async fn can_change_password() {
     login_data.password = change_password_data.new_password.clone();
     let response = app.call_login_api(&login_data).await;
     assert_eq!(response.status(), reqwest::StatusCode::OK);
+    // セッションIDとトークンが変わっていることを確認
+    let session_id_2nd = app.get_session_id().unwrap();
+    let (access_token_2nd, refresh_token_2nd) = app.get_token_values();
+    assert!(session_id != session_id_2nd);
+    assert!(access_token != access_token_2nd);
+    assert!(refresh_token != refresh_token_2nd);
 }
