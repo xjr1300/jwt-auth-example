@@ -120,7 +120,7 @@ pub async fn logout(session: TypedSession) -> Result<HttpResponse, actix_web::Er
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangePasswordData {
-    pub old_password: Secret<String>,
+    pub current_password: Secret<String>,
     pub new_password: Secret<String>,
 }
 
@@ -131,23 +131,27 @@ pub async fn change_password(
     session: TypedSession,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let old_password = RawPassword::new(data.old_password.expose_secret()).map_err(e400)?;
+    let current_password = RawPassword::new(data.current_password.expose_secret()).map_err(e400)?;
     let new_password = RawPassword::new(data.new_password.expose_secret()).map_err(e400)?;
 
-    accounts::change_password(&user, old_password, new_password, &session, pool.as_ref())
-        .await
-        .map_err(|e| {
-            tracing::error!("{:?}", e);
-            match e {
-                ChangePasswordError::UnexpectedError(_) => {
-                    actix_web::error::ErrorInternalServerError(e)
-                }
-                ChangePasswordError::IncorrectCurrentPassword => {
-                    actix_web::error::ErrorBadRequest(e)
-                }
-                ChangePasswordError::NotFound(_) => actix_web::error::ErrorBadRequest(e),
+    accounts::change_password(
+        &user,
+        current_password,
+        new_password,
+        &session,
+        pool.as_ref(),
+    )
+    .await
+    .map_err(|e| {
+        tracing::error!("{:?}", e);
+        match e {
+            ChangePasswordError::UnexpectedError(_) => {
+                actix_web::error::ErrorInternalServerError(e)
             }
-        })?;
+            ChangePasswordError::IncorrectCurrentPassword => actix_web::error::ErrorBadRequest(e),
+            ChangePasswordError::NotFound(_) => actix_web::error::ErrorBadRequest(e),
+        }
+    })?;
 
     // 有効期限のないトークン用のクッキーを生成
     let (access_token_cookie, refresh_token_cookie) = create_expired_token_cookies();

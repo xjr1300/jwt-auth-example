@@ -230,7 +230,7 @@ pub enum ChangePasswordError {
 /// パスワードの変更を試行して、パスワードの変更に成功したら、Redisに格納されたセッションデータを削除する。
 pub async fn change_password(
     user: &User,
-    old_password: RawPassword,
+    current_password: RawPassword,
     new_password: RawPassword,
     session: &TypedSession,
     pool: &PgPool,
@@ -238,7 +238,7 @@ pub async fn change_password(
     // ユーザーの現在のパスワードが一致するか確認
     let expected_hashed = user.hashed_password().value().to_owned();
     let _ = spawn_blocking_with_tracing(move || {
-        verify_password(&expected_hashed, old_password.value())
+        verify_password(&expected_hashed, current_password.value())
     })
     .await
     .map_err(|e| ChangePasswordError::UnexpectedError(e.into()))

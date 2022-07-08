@@ -44,6 +44,13 @@ pub struct LoginData {
     pub password: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangePasswordData {
+    pub current_password: String,
+    pub new_password: String,
+}
+
 /// テスト用Webアプリ構造体
 pub struct TestWebApp {
     pub settings: Settings,
@@ -76,6 +83,18 @@ impl TestWebApp {
             .expect("サインアップAPIにアクセスできませんでした。")
     }
 
+    pub fn login_data(&self) -> LoginData {
+        LoginData {
+            email_address: self
+                .test_users
+                .active_user
+                .email_address()
+                .value()
+                .to_owned(),
+            password: self.test_users.active_user_password.clone(),
+        }
+    }
+
     /// ログインAPIを呼び出す。
     pub async fn call_login_api(&self, data: &LoginData) -> reqwest::Response {
         self.api_client
@@ -105,10 +124,22 @@ impl TestWebApp {
             .expect("保護リソース取得APIにアクセスできませんでした。")
     }
 
+    pub fn change_password_data(&self) -> ChangePasswordData {
+        ChangePasswordData {
+            current_password: self.test_users.active_user_password.clone(),
+            new_password: "6i8TR:6Al@.d".to_owned(),
+        }
+    }
+
     /// パスワード変更APIを呼び出す。
-    pub async fn call_change_password_api(&self) -> reqwest::Response {
+    pub async fn call_change_password_api(&self, data: &ChangePasswordData) -> reqwest::Response {
         self.api_client
-            .post(&format!("{}/change_password", self.web_app_address))
+            .post(&format!(
+                "{}/accounts/change_password",
+                self.web_app_address
+            ))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .json(&data)
             .send()
             .await
             .expect("パスワード変更APIにアクセスできませんでした。")
