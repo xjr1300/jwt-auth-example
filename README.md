@@ -1,6 +1,5 @@
 # jwt-auth-example
 
-- [Zero To Production In Rust](https://www.zero2prod.com/index.html)に感謝
 - JWTトークンでユーザーを認証することを試行したサンプルアプリケーション
 - クッキーでトークンを送受信するため、HTTPSで運用することを前提
 
